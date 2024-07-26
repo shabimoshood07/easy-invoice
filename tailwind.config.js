@@ -15,6 +15,7 @@ export default {
 
         secondary: {
           1: "#e9ecef",
+          2: "#edede9",
         },
       },
     },
