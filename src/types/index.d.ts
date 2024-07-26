@@ -19,7 +19,7 @@ interface CreateInvoiceFormDataType {
   clientZipCode: string;
   clientCountry: string;
   invoiceDate: Date;
-  paymentTerms: { days: string; value: number };
+  paymentTerms: { days: string; value: number } | null;
   paymentDueDate: Date | null;
   productDescription: string;
   invoicePending: null | boolean;

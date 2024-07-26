@@ -10,9 +10,11 @@ import { uid } from "uid";
 import { useToast } from "primevue/usetoast";
 import { db } from "../firebase/firebaseInit";
 import { collection, addDoc } from "firebase/firestore";
+import { title } from "process";
 const toast = useToast();
 
 const visible = ref(false);
+const discardDialogvisible = ref(false);
 const loading = ref(false);
 
 const initialState = {
@@ -28,7 +30,7 @@ const initialState = {
   clientZipCode: "",
   clientCountry: "",
   invoiceDate: new Date(),
-  paymentTerms: { days: "", value: 0 },
+  paymentTerms: null,
   paymentDueDate: null,
   productDescription: "",
   invoicePending: null,
@@ -49,7 +51,7 @@ const data = reactive<CreateInvoiceFormDataType>({
   clientZipCode: "",
   clientCountry: "",
   invoiceDate: new Date(),
-  paymentTerms: { days: "", value: 0 },
+  paymentTerms: null,
   paymentDueDate: null,
   productDescription: "",
   invoicePending: null,
@@ -84,6 +86,7 @@ const resetForm = () => {
     (data as any)[key] = value;
   }
   invoiceItems.value = [];
+  data.paymentDueDate = null;
 };
 const handlePublishInvoice = async () => {
   if (invoiceItems.value.length <= 0) {
@@ -121,6 +124,7 @@ const handleSaveDraft = async () => {
 
 const handleCloseModal = () => {
   visible.value = false;
+  discardDialogvisible.value = false;
   resetForm();
 };
 
@@ -130,12 +134,6 @@ const deleteInvoiceItem = (id: string) => {
   );
   invoiceItems.value = filteredData;
 };
-// const updateInvoiceItem = (id: string) => {
-//   const filteredData = invoiceItems.value.map((item)=>{
-//     if()
-//   })
-//   invoiceItems.value = filteredData;
-// };
 
 const getInvoiceTotal = () => {
   data.invoiceTotal = 0;
@@ -158,15 +156,21 @@ const addNewInvoiceItem = () => {
 
 const { paymentTerms } = toRefs(data);
 watch(paymentTerms, () => {
-  const futureDate = new Date();
-  data.paymentDueDate = new Date(
-    futureDate.setDate(futureDate.getDate() + data.paymentTerms.value)
-  );
+  if (data.paymentTerms) {
+    const futureDate = new Date();
+    data.paymentDueDate = new Date(
+      futureDate.setDate(futureDate.getDate() + data.paymentTerms.value)
+    );
+  }
 });
 
 watch(invoiceItems.value, () => {
   getInvoiceTotal();
 });
+
+const test = () => {
+  discardDialogvisible.value = true;
+};
 </script>
 <template>
   <div>
@@ -175,14 +179,19 @@ watch(invoiceItems.value, () => {
       label="Create invoice"
       iconPos="right"
       @click="() => (visible = true)"
-      class="bg-primary-5 hover:!bg-primary-3 p-2 text-secondary-1 dark:bg-secondary-1 dark:hover:text-secondary-1 dark:text-primary-5 text-base border-transparent"
+      class="primary-btn text-base font-semibold"
     />
+    <!-- Create invoice dialog -->
+    <!-- :update:visible="(value:boolean)=> value ? discardDialogvisible=false : discardDialogvisible=true" -->
+    <!-- :update:visible="discardDialogvisible" -->
     <Dialog
       v-model:visible="visible"
+      :closable="false"
       header="New Invoice"
       position="left"
       :modal="true"
       :draggable="false"
+      dismissableMask
       class="w-full max-w-[700px] m-0 h-full max-h-none rounded-none bg-primary-1 dark:bg-primary-4 border-none"
       :pt="{
         title: {
@@ -190,6 +199,9 @@ watch(invoiceItems.value, () => {
         },
         pcCloseButton: {
           class: 'text-primary-5 dark:text-secondary-1 ',
+        },
+        mask: {
+          class: 'backdrop-blur-sm',
         },
       }"
     >
@@ -319,7 +331,7 @@ watch(invoiceItems.value, () => {
         <Button
           @click="addNewInvoiceItem"
           label="Add new item"
-          class="w-full bg-primary-5 text-base p-2 text-secondary-1 hover:bg-primary-3 dark:bg-secondary-1 dark:text-primary-5 dark:hover:bg-primary-3"
+          class="primary-btn w-full"
         />
 
         <div class="flex justify-between gap-2 my-10">
@@ -327,9 +339,9 @@ watch(invoiceItems.value, () => {
             type="button"
             label="Discard"
             severity=""
-            @click="handleCloseModal"
+            @click="discardDialogvisible = true"
             :disabled="loading"
-            class="bg-red-300 text-red-800 min-w-[150px] p-2 hover:bg-red-400"
+            class="warning-btn min-w-[150px]"
           ></Button>
           <div class="flex gap-2">
             <Button
@@ -337,18 +349,58 @@ watch(invoiceItems.value, () => {
               label="Save draft"
               @click="handleSaveDraft"
               :disabled="loading"
-              class="dark:bg-secondary-1 bg-primary-5 text-secondary-1 hover:bg-primary-3 p-2 min-w-[150px] dark:text-primary-5 dark:hover:bg-primary-3"
+              class="primary-btn"
             />
             <Button
               type="submit"
               :loading="loading"
               :icon="loading && 'pi-spin pi-spinner'"
               :label="loading ? '' : 'Create invoice'"
-              class="dark:bg-secondary-1 dark:text-primary-5 bg-primary-5 text-secondary-1 hover:bg-primary-3 p-2 min-w-[150px] dark:hover:bg-primary-3"
+              class="primary-btn"
             />
           </div>
         </div>
       </form>
+    </Dialog>
+
+    <!-- Discard dialog -->
+    <Dialog
+      v-model:visible="discardDialogvisible"
+      modal
+      header="Discard changes"
+      :style="{ width: '25rem' }"
+      :closable="false"
+      :pt="{
+        root: {
+          class: 'dark:bg-primary-5 dark:',
+        },
+        title: {
+          class: 'dark:text-secondary-1',
+        },
+        mask: {
+          class: 'backdrop-blur-sm',
+        },
+      }"
+    >
+      <span class="text-primary-5 text-base dark:text-surface-400 block mb-8"
+        >All unsaved changes will be lost</span
+      >
+
+      <div class="flex justify-end gap-2">
+        <Button
+          type="button"
+          label="Discard"
+          severity="secondary"
+          @click="handleCloseModal"
+          class="warning-btn"
+        ></Button>
+        <Button
+          type="button"
+          label="Resume"
+          class="primary-btn"
+          @click="discardDialogvisible = false"
+        ></Button>
+      </div>
     </Dialog>
   </div>
 </template>

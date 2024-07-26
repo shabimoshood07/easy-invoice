@@ -11,3 +11,11 @@
 body {
     @apply bg-secondary-1 dark:bg-primary-5
 }
+
+.primary-btn {
+    @apply bg-primary-3 hover:bg-primary-4 p-2 text-secondary-1 dark:bg-secondary-1 dark:hover:bg-primary-1 dark:text-primary-5 border-transparent
+}
+
+.warning-btn {
+    @apply bg-red-300 text-red-800  p-2 hover:bg-red-400
+}
