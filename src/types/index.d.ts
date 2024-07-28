@@ -7,7 +7,6 @@ interface InvoiceItemType {
 }
 
 interface CreateInvoiceFormDataType {
-  billerName: string;
   billerStreetAddress: string;
   billerCity: string;
   billerZipCode: string;

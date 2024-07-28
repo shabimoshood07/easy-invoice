@@ -10,16 +10,19 @@
   },
   "dependencies": {
     "@primevue/themes": "^4.0.1",
+    "@vee-validate/zod": "^4.13.2",
     "@vueuse/core": "^10.11.0",
     "firebase": "^10.12.4",
     "primeicons": "^7.0.0",
     "primevue": "^4.0.1",
     "tailwindcss-primeui": "^0.3.4",
     "uid": "^2.0.2",
+    "vee-validate": "^4.13.2",
     "vue": "^3.4.31",
     "vue-iconsax": "^1.9.0",
     "vue-router": "^4.4.0",
-    "vuex": "^4.1.0"
+    "vuex": "^4.1.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@primevue/auto-import-resolver": "^4.0.1",

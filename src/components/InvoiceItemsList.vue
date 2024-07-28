@@ -100,23 +100,24 @@ const deleteItem = () => {
     >
       <div class="flex items-center gap-4">
         <i class="pi pi-exclamation-triangle !text-3xl" />
-        <span v-if="selectedItem && selectedItem.itemName !== ''"
-          >Are you sure you want to delete <b>{{ selectedItem.itemName }}</b
-          >?
+        <span v-if="selectedItem && selectedItem.itemName !== ''" >
+          Are you sure you want to delete <b>{{ selectedItem.itemName }}</b>?
         </span>
-        <span v-else> >Are you sure you want to delete <b>New item</b>? </span>
+        <span v-else> Are you sure you want to delete <b>New item</b>? </span>
       </div>
       <template #footer>
         <Button
           label="No"
           icon="pi pi-times"
-          text
+          type="button"
+          class="primary-btn"
           @click="deleteItemDialog = false"
         />
         <Button
           label="Yes"
           icon="pi pi-check"
           type="button"
+          class="warning-btn"
           @click="deleteItem"
         />
         <!-- @click="emit('deleteInvoiceItem', selectedItem!.id)" -->

@@ -1,12 +1,13 @@
 <script setup lang="ts">
-defineProps({
-  modelValue: { type: String, required: true },
-  label: { type: String, required: true },
-  description: { type: String },
-  aria: { type: String },
-});
+import InputText from "primevue/inputtext";
+import { useField } from "vee-validate";
 
-const emit = defineEmits(["update:modelValue"]);
+const props = defineProps({
+  name: { type: String, required: true },
+  type: String,
+  label: { type: String, required: true },
+});
+const { value, errorMessage } = useField(() => props.name);
 </script>
 
 <template>
@@ -17,16 +18,15 @@ const emit = defineEmits(["update:modelValue"]);
       >{{ label }}</label
     >
     <InputText
-      v-bind="$attrs"
-      :id="label"
-      :aria-describedby="aria"
+      v-model="value"
+      :type="type || 'text'"
+      :autocomplete="true"
       class="border-2 h-10 text-base font-medium p-1 text-primary-5 dark:bg-primary-1 bg-secondary-1"
-      :value="modelValue"
-      @input="$emit('update:modelValue', $event.target.value)"
     />
-    <!-- required -->
-    <small :id="aria" class="text-primary-5 dark:text-secondary-1">
-      {{ description }}
-    </small>
+    <span v-if="errorMessage" class="text-red-400 text-sm">{{
+      errorMessage
+    }}</span>
   </div>
 </template>
+
+<style scoped></style>

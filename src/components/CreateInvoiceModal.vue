@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
-import { reactive, ref, toRefs, watch } from "vue";
+import { reactive, ref, watch } from "vue";
 import FormInput from "./common/FormInput.vue";
 import Select from "primevue/select";
 import DatePicker from "primevue/datepicker";
@@ -10,7 +10,10 @@ import { uid } from "uid";
 import { useToast } from "primevue/usetoast";
 import { db } from "../firebase/firebaseInit";
 import { collection, addDoc } from "firebase/firestore";
-import { title } from "process";
+import { useField, useForm } from "vee-validate";
+import { toTypedSchema } from "@vee-validate/zod";
+import * as zod from "zod";
+
 const toast = useToast();
 
 const visible = ref(false);
@@ -18,7 +21,6 @@ const discardDialogvisible = ref(false);
 const loading = ref(false);
 
 const initialState = {
-  billerName: "",
   billerStreetAddress: "",
   billerCity: "",
   billerZipCode: "",
@@ -30,33 +32,71 @@ const initialState = {
   clientZipCode: "",
   clientCountry: "",
   invoiceDate: new Date(),
-  paymentTerms: null,
   paymentDueDate: null,
+  paymentTerms: null,
   productDescription: "",
   invoicePending: null,
   invoiceDraft: null,
   invoiceTotal: 0,
 };
 
-const data = reactive<CreateInvoiceFormDataType>({
-  billerName: "",
-  billerStreetAddress: "",
-  billerCity: "",
-  billerZipCode: "",
-  billerCountry: "",
-  clientName: "",
-  clientEmail: "",
-  clientStreetAddress: "",
-  clientCity: "",
-  clientZipCode: "",
-  clientCountry: "",
-  invoiceDate: new Date(),
-  paymentTerms: null,
-  paymentDueDate: null,
-  productDescription: "",
-  invoicePending: null,
-  invoiceDraft: null,
-  invoiceTotal: 0,
+const validationSchema = toTypedSchema(
+  zod.object({
+    billerStreetAddress: zod
+      .string({ required_error: "street is required" })
+      .min(1, { message: "street is required" }),
+    // .email({ message: "Must be a valid email" }),
+    billerCity: zod
+      .string({ required_error: "city is required" })
+      .min(1, { message: "city is required" }),
+    billerZipCode: zod
+      .string({ required_error: "zip code is required" })
+      .min(1, { message: "zip code is required" }),
+    billerCountry: zod
+      .string({ required_error: "country is required" })
+      .min(1, { message: "country is required" }),
+    clientName: zod
+      .string({ required_error: "client name is required" })
+      .min(1, { message: "client name is required" }),
+    clientEmail: zod
+      .string({ required_error: "email is required" })
+      .min(1, { message: "client name is required" })
+      .email({ message: "invalid  email" }),
+    clientStreetAddress: zod
+      .string({ required_error: "street is required" })
+      .min(1, { message: "street is required" }),
+    clientCity: zod
+      .string({ required_error: "city is required" })
+      .min(1, { message: "city is required" }),
+    clientZipCode: zod
+      .string({ required_error: "zip code is required" })
+      .min(1, { message: "zip code is required" }),
+    clientCountry: zod
+      .string({ required_error: "country is required" })
+      .min(1, { message: "country is required" }),
+    productDescription: zod
+      .string({ required_error: "country is required" })
+      .min(1, { message: "country is required" }),
+    invoicePending: zod.boolean().nullable(),
+    invoiceDraft: zod.boolean().nullable(),
+    invoiceDate: zod.date(),
+    paymentDueDate: zod.date().nullable(),
+    paymentTerms: zod
+      .object({
+        days: zod.string(),
+        value: zod.number(),
+      })
+      .nullable(),
+    invoiceTotal: zod.number().nullable(),
+
+    // paymentTerms: zod.number({ required_error: "select payment term" }),
+  })
+);
+const { handleSubmit, resetForm, setFieldValue } = useForm({
+  validationSchema,
+  validateOnMount: false,
+  keepValuesOnUnmount: true,
+  initialValues: initialState,
 });
 
 const paymentTermsData = ref([
@@ -64,82 +104,35 @@ const paymentTermsData = ref([
   { days: "Net 60 days", value: 60 },
 ]);
 
-const invoiceItems = ref<InvoiceItemType[]>([
-  // {
-  //   id: uid(),
-  //   itemName: "car",
-  //   price: 50,
-  //   quantity: 5,
-  //   total: 0,
-  // },
-  // {
-  //   id: uid(),
-  //   itemName: "house",
-  //   price: 500,
-  //   quantity: 2,
-  //   total: 0,
-  // },
-]);
-
-const resetForm = () => {
-  for (const [key, value] of Object.entries(initialState)) {
-    (data as any)[key] = value;
-  }
-  invoiceItems.value = [];
-  data.paymentDueDate = null;
-};
-const handlePublishInvoice = async () => {
-  if (invoiceItems.value.length <= 0) {
-    return toast.add({
-      severity: "error",
-      summary: "Error",
-      detail: "Please add invoice items",
-      life: 3000,
-    });
-  }
-  loading.value = true;
-  data.invoicePending = true;
-  const dbBase = collection(db, "invoice");
-  const newInvoice = {
-    invoiceId: uid(6),
-    ...data,
-    invoiceItemList: invoiceItems.value,
-  };
-  await addDoc(dbBase, newInvoice);
-
-  loading.value = false;
-  toast.add({
-    severity: "success",
-    summary: "Success",
-    detail: "Invoice created successfully",
-    life: 3000,
-  });
-  handleCloseModal();
-};
+const invoiceItems = reactive<InvoiceItemType[]>([]);
 
 const handleSaveDraft = async () => {
-  data.invoiceDraft = true;
-  console.log(data);
+  setFieldValue("invoiceDraft", true);
+};
+const handleFormReset = () => {
+  resetForm();
+  invoiceItems.splice(0, invoiceItems.length);
 };
 
 const handleCloseModal = () => {
+  handleFormReset();
   visible.value = false;
   discardDialogvisible.value = false;
-  resetForm();
 };
 
 const deleteInvoiceItem = (id: string) => {
-  const filteredData = invoiceItems.value.filter(
-    (item: InvoiceItemType) => item.id !== id
-  );
-  invoiceItems.value = filteredData;
+  const index = invoiceItems.findIndex((item) => item.id === id);
+  if (index !== -1) {
+    invoiceItems.splice(index, 1);
+  }
 };
 
 const getInvoiceTotal = () => {
-  data.invoiceTotal = 0;
-  invoiceItems.value.forEach((item) => {
-    data.invoiceTotal += item.total!;
+  let total = 0;
+  invoiceItems.forEach((item) => {
+    total += item.total!;
   });
+  setFieldValue("invoiceTotal", total);
 };
 
 const addNewInvoiceItem = () => {
@@ -150,27 +143,62 @@ const addNewInvoiceItem = () => {
     quantity: 0,
     total: 0,
   };
-
-  invoiceItems.value.push(newInvoiceItem);
+  invoiceItems.push(newInvoiceItem);
 };
 
-const { paymentTerms } = toRefs(data);
+const handlePublishInvoice = handleSubmit(async (values) => {
+  if (invoiceItems.length <= 0) {
+    return toast.add({
+      severity: "error",
+      summary: "Error",
+      detail: "Please add invoice items",
+      life: 3000,
+    });
+  }
+  loading.value = true;
+  const dbBase = collection(db, "invoice");
+  const newInvoice = {
+    invoiceId: uid(6),
+    ...values,
+    invoicePending: true,
+    invoiceItemList: invoiceItems,
+  };
+
+  console.log(newInvoice);
+
+  await addDoc(dbBase, newInvoice);
+
+  loading.value = false;
+  toast.add({
+    severity: "success",
+    summary: "Success",
+    detail: "Invoice created successfully",
+    life: 3000,
+  });
+  handleCloseModal();
+});
+
+const { value: invoiceDate } = useField("invoiceDate", validationSchema);
+const { value: paymentTerms, errorMessage: paymentTermsError } = useField(
+  "paymentTerms",
+  validationSchema
+);
+
+const { value: paymentDueDate } = useField("paymentDueDate", validationSchema);
+
 watch(paymentTerms, () => {
-  if (data.paymentTerms) {
+  if (paymentTerms?.value) {
     const futureDate = new Date();
-    data.paymentDueDate = new Date(
-      futureDate.setDate(futureDate.getDate() + data.paymentTerms.value)
+    const paymentDueDate = new Date(
+      futureDate.setDate(futureDate.getDate() + paymentTerms.value.value)
     );
+    setFieldValue("paymentDueDate", paymentDueDate);
   }
 });
 
-watch(invoiceItems.value, () => {
+watch(invoiceItems, () => {
   getInvoiceTotal();
 });
-
-const test = () => {
-  discardDialogvisible.value = true;
-};
 </script>
 <template>
   <div>
@@ -182,11 +210,9 @@ const test = () => {
       class="primary-btn text-base font-semibold"
     />
     <!-- Create invoice dialog -->
-    <!-- :update:visible="(value:boolean)=> value ? discardDialogvisible=false : discardDialogvisible=true" -->
-    <!-- :update:visible="discardDialogvisible" -->
     <Dialog
-      v-model:visible="visible"
       :closable="false"
+      v-model:visible="visible"
       header="New Invoice"
       position="left"
       :modal="true"
@@ -214,21 +240,13 @@ const test = () => {
             >
               Bill from
             </h1>
-            <FormInput
-              v-model="data.billerStreetAddress"
-              label="street address"
-            />
+            <FormInput label="street address" name="billerStreetAddress" />
             <div class="grid md:grid-cols-3 gap-2">
-              <FormInput v-model="data.billerCity" label=" city" />
-              <FormInput
-                v-model="data.billerZipCode"
-                type="number"
-                label="zip cdoe"
-              />
-              <FormInput v-model="data.billerCountry" label="country" />
+              <FormInput label="city" name="billerCity" />
+              <FormInput label="zip cdoe" type="number" name="billerZipCode" />
+              <FormInput label="country" name="billerCountry" />
             </div>
           </div>
-
           <!-- Bill to -->
           <div class="space-y-3">
             <h1
@@ -236,21 +254,13 @@ const test = () => {
             >
               Bill To
             </h1>
-            <FormInput v-model="data.clientName" label="client name" />
-            <FormInput v-model="data.clientEmail" label=" client email" />
-            <FormInput
-              v-model="data.clientStreetAddress"
-              label="street address"
-            />
+            <FormInput name="clientName" label="client name" />
+            <FormInput name="clientEmail" label=" client email" />
+            <FormInput name="clientStreetAddress" label="street address" />
             <div class="grid md:grid-cols-3 gap-2">
-              <FormInput v-model="data.clientCity" label="city" />
-
-              <FormInput
-                v-model="data.clientZipCode"
-                type="number"
-                label="zip code"
-              />
-              <FormInput v-model="data.clientCountry" label="country" />
+              <FormInput name="clientCity" label="city" />
+              <FormInput name="clientZipCode" type="number" label="zip code" />
+              <FormInput name="clientCountry" label="country" />
             </div>
           </div>
 
@@ -264,11 +274,7 @@ const test = () => {
                   class="text-primary-5 dark:text-secondary-1 capitalize"
                   >Invoice date</label
                 >
-                <DatePicker
-                  v-model="data.invoiceDate"
-                  disabled
-                  id="invoiceDate"
-                />
+                <DatePicker v-model="invoiceDate" disabled id="invoiceDate" />
               </div>
               <div class="flex flex-col gap-2 w-full">
                 <label
@@ -278,7 +284,7 @@ const test = () => {
                 >
                 <DatePicker
                   disabled
-                  v-model="data.paymentDueDate"
+                  v-model="paymentDueDate"
                   id="invoiceDueDate"
                 />
               </div>
@@ -291,7 +297,7 @@ const test = () => {
                 >Select payment terms</label
               >
               <Select
-                v-model="data.paymentTerms"
+                v-model="paymentTerms"
                 id="paymentTerms"
                 :options="paymentTermsData"
                 optionLabel="days"
@@ -315,12 +321,11 @@ const test = () => {
                   },
                 }"
               />
+              <span v-if="paymentTermsError" class="text-red-400 text-sm">{{
+                paymentTermsError
+              }}</span>
             </div>
-
-            <FormInput
-              v-model="data.productDescription"
-              label="product description"
-            />
+            <FormInput name="productDescription" label="product description" />
           </div>
         </div>
 
