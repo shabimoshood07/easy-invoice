@@ -1,9 +1,21 @@
 <script setup lang="ts">
 import Select from "primevue/select";
-import Button from "primevue/button";
-import { ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import CreateInvoiceModal from "../components/CreateInvoiceModal.vue";
 import InvoiceList from "../components/InvoiceList.vue";
+import { useStore } from "vuex";
+const store = useStore();
+
+const invoices = computed(() => store.getters["getInvoices"]);
+const isLoadingInvoices = computed(() => store.getters["isLoadingInvoices"]);
+
+const getInvoices = async () => {
+  await store.dispatch("GET_INVOICES");
+};
+
+onMounted(() => {
+  getInvoices();
+});
 
 const selectedStatus = ref();
 const statuses = ref([
@@ -24,7 +36,6 @@ const toggleFilterMenu = (e: any) => {
       <h1 class="text-2xl lg:text-4xl text-primary-5 dark:text-secondary-1">
         Invoices
       </h1>
-
       <div class="flex items-center gap-2 flex-wrap">
         <!-- create invoice modal -->
         <CreateInvoiceModal />
@@ -54,7 +65,7 @@ const toggleFilterMenu = (e: any) => {
         />
       </div>
     </div>
-    <InvoiceList />
+    <InvoiceList :invoices="invoices" :isLoadingInvoices="isLoadingInvoices" />
   </div>
 </template>
 

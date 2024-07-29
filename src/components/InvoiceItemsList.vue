@@ -3,7 +3,6 @@ import { ref } from "vue";
 
 const props = defineProps<{
   invoiceItems: InvoiceItemType[];
-  //   deleteInvoiceItem: (id: string) => void;
 }>();
 
 const onRowEditSave = (event: any) => {
@@ -29,7 +28,11 @@ const deleteItem = () => {
 </script>
 <template>
   <div class="my-7 space-y-3">
-    <h1 class="text-primary-5 text-lg dark:text-secondary-1 font-semibold capitalize">Invoice items</h1>
+    <h1
+      class="text-primary-5 text-lg dark:text-secondary-1 font-semibold capitalize"
+    >
+      Invoice items
+    </h1>
     <DataTable
       :value="invoiceItems"
       editMode="row"
@@ -100,8 +103,9 @@ const deleteItem = () => {
     >
       <div class="flex items-center gap-4">
         <i class="pi pi-exclamation-triangle !text-3xl" />
-        <span v-if="selectedItem && selectedItem.itemName !== ''" >
-          Are you sure you want to delete <b>{{ selectedItem.itemName }}</b>?
+        <span v-if="selectedItem && selectedItem.itemName !== ''">
+          Are you sure you want to delete <b>{{ selectedItem.itemName }}</b
+          >?
         </span>
         <span v-else> Are you sure you want to delete <b>New item</b>? </span>
       </div>

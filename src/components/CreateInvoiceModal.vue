@@ -13,6 +13,7 @@ import { collection, addDoc } from "firebase/firestore";
 import { useField, useForm } from "vee-validate";
 import { toTypedSchema } from "@vee-validate/zod";
 import * as zod from "zod";
+import { InvoiceItemType } from "../types";
 
 const toast = useToast();
 
@@ -33,7 +34,7 @@ const initialState = {
   clientCountry: "",
   invoiceDate: new Date(),
   paymentDueDate: null,
-  paymentTerms: null,
+  paymentTerms: {},
   productDescription: "",
   invoicePending: null,
   invoiceDraft: null,
@@ -45,7 +46,6 @@ const validationSchema = toTypedSchema(
     billerStreetAddress: zod
       .string({ required_error: "street is required" })
       .min(1, { message: "street is required" }),
-    // .email({ message: "Must be a valid email" }),
     billerCity: zod
       .string({ required_error: "city is required" })
       .min(1, { message: "city is required" }),
@@ -75,21 +75,20 @@ const validationSchema = toTypedSchema(
       .string({ required_error: "country is required" })
       .min(1, { message: "country is required" }),
     productDescription: zod
-      .string({ required_error: "country is required" })
-      .min(1, { message: "country is required" }),
+      .string({ required_error: "product description is required" })
+      .min(1, { message: "product description is required" }),
     invoicePending: zod.boolean().nullable(),
     invoiceDraft: zod.boolean().nullable(),
     invoiceDate: zod.date(),
     paymentDueDate: zod.date().nullable(),
-    paymentTerms: zod
-      .object({
+    paymentTerms: zod.object(
+      {
         days: zod.string(),
         value: zod.number(),
-      })
-      .nullable(),
+      },
+      { required_error: "select payment terms" }
+    ),
     invoiceTotal: zod.number().nullable(),
-
-    // paymentTerms: zod.number({ required_error: "select payment term" }),
   })
 );
 const { handleSubmit, resetForm, setFieldValue } = useForm({
@@ -121,7 +120,9 @@ const handleCloseModal = () => {
 };
 
 const deleteInvoiceItem = (id: string) => {
-  const index = invoiceItems.findIndex((item) => item.id === id);
+  const index = invoiceItems.findIndex(
+    (item: InvoiceItemType) => item.id === id
+  );
   if (index !== -1) {
     invoiceItems.splice(index, 1);
   }
@@ -187,9 +188,11 @@ const { value: paymentTerms, errorMessage: paymentTermsError } = useField(
 const { value: paymentDueDate } = useField("paymentDueDate", validationSchema);
 
 watch(paymentTerms, () => {
-  if (paymentTerms?.value) {
+  // @ts-ignore
+  if (paymentTerms?.value?.value) {
     const futureDate = new Date();
     const paymentDueDate = new Date(
+      // @ts-ignore
       futureDate.setDate(futureDate.getDate() + paymentTerms.value.value)
     );
     setFieldValue("paymentDueDate", paymentDueDate);
@@ -276,55 +279,56 @@ watch(invoiceItems, () => {
                 >
                 <DatePicker v-model="invoiceDate" disabled id="invoiceDate" />
               </div>
+              <!-- Payment terms -->
               <div class="flex flex-col gap-2 w-full">
                 <label
-                  for="invoiceDueDate"
+                  for="paymentTerms"
                   class="text-primary-5 dark:text-secondary-1 capitalize"
-                  >Payment due date</label
+                  >Select payment terms</label
                 >
-                <DatePicker
-                  disabled
-                  v-model="paymentDueDate"
-                  id="invoiceDueDate"
+                <Select
+                  v-model="paymentTerms"
+                  id="paymentTerms"
+                  :options="paymentTermsData"
+                  optionLabel="days"
+                  placeholder="Select payment terms"
+                  class="w-full"
+                  checkmark
+                  :highlightOnSelect="true"
+                  :pt="{
+                    root: {
+                      class:
+                        'h-10 justify-center bg-secondary-1 dark:bg-primary-1 items-center',
+                    },
+                    listContainer: {
+                      class:
+                        'p-4 bg-primary-5 dark:bg-secondary-1 rounded-md max-h-none',
+                    },
+                    list: { class: 'text-base' },
+                    option: {
+                      class:
+                        'hover:!text-primary-5 !text-secondary-1 p-2 dark:hover:bg-secondary-1 dark:!text-primary-5 ',
+                    },
+                  }"
                 />
+                <span v-if="paymentTermsError" class="text-red-400 text-sm">{{
+                  paymentTermsError
+                }}</span>
               </div>
             </div>
-            <!-- Payment terms -->
             <div class="flex flex-col gap-2 w-full">
               <label
-                for="paymentTerms"
+                for="invoiceDueDate"
                 class="text-primary-5 dark:text-secondary-1 capitalize"
-                >Select payment terms</label
+                >Payment due date</label
               >
-              <Select
-                v-model="paymentTerms"
-                id="paymentTerms"
-                :options="paymentTermsData"
-                optionLabel="days"
-                placeholder="Select payment terms"
-                class="w-full"
-                checkmark
-                :highlightOnSelect="true"
-                :pt="{
-                  root: {
-                    class:
-                      'h-10 justify-center bg-secondary-1 dark:bg-primary-1 items-center',
-                  },
-                  listContainer: {
-                    class:
-                      'p-4 bg-primary-5 dark:bg-secondary-1 rounded-md max-h-none',
-                  },
-                  list: { class: 'text-base' },
-                  option: {
-                    class:
-                      'hover:!text-primary-5 !text-secondary-1 p-2 dark:hover:bg-secondary-1 dark:!text-primary-5 ',
-                  },
-                }"
+              <DatePicker
+                disabled
+                v-model="paymentDueDate"
+                id="invoiceDueDate"
               />
-              <span v-if="paymentTermsError" class="text-red-400 text-sm">{{
-                paymentTermsError
-              }}</span>
             </div>
+
             <FormInput name="productDescription" label="product description" />
           </div>
         </div>
@@ -410,7 +414,7 @@ watch(invoiceItems, () => {
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style lang="css" scoped>
 .p-datepicker {
   @apply h-10 text-base;
 }
