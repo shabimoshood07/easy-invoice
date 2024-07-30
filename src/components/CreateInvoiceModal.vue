@@ -38,6 +38,7 @@ const initialState = {
   productDescription: "",
   invoicePending: null,
   invoiceDraft: null,
+  invoicePaid: null,
   invoiceTotal: 0,
 };
 
@@ -79,6 +80,7 @@ const validationSchema = toTypedSchema(
       .min(1, { message: "product description is required" }),
     invoicePending: zod.boolean().nullable(),
     invoiceDraft: zod.boolean().nullable(),
+    invoicePaid: zod.boolean().nullable(),
     invoiceDate: zod.date(),
     paymentDueDate: zod.date().nullable(),
     paymentTerms: zod.object(

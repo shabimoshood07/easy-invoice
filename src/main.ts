@@ -8,13 +8,14 @@ import PrimeVue from "primevue/config";
 import Aura from "@primevue/themes/aura";
 import "primeicons/primeicons.css";
 import ToastService from "primevue/toastservice";
-import store from "./store/store";
-// import {store} from "./store/store"
+import { createPinia } from "pinia";
+
 const app = createApp(App);
 
+const pinia = createPinia();
+app.use(pinia);
 app.use(router);
 app.use(ToastService);
-app.use(store);
 app.component("VsxIcon", VsxIcon);
 
 app.use(PrimeVue, {
@@ -23,7 +24,6 @@ app.use(PrimeVue, {
     options: {
       prefix: "p",
       darkModeSelector: "vueuse-color-scheme",
-      // cssLayer: false,
       cssLayer: {
         name: "primevue",
         order: "tailwind-base, primevue, tailwind-utilities",

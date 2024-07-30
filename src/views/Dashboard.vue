@@ -1,20 +1,16 @@
 <script setup lang="ts">
 import Select from "primevue/select";
-import { computed, onMounted, ref } from "vue";
+import { onMounted, ref } from "vue";
 import CreateInvoiceModal from "../components/CreateInvoiceModal.vue";
 import InvoiceList from "../components/InvoiceList.vue";
-import { useStore } from "vuex";
-const store = useStore();
+import { useInvoiceStore } from "../store/store";
+import { storeToRefs } from "pinia";
+const invoiceStore = useInvoiceStore();
 
-const invoices = computed(() => store.getters["getInvoices"]);
-const isLoadingInvoices = computed(() => store.getters["isLoadingInvoices"]);
-
-const getInvoices = async () => {
-  await store.dispatch("GET_INVOICES");
-};
-
+const { invoices, isLoadingInvoices } = storeToRefs(invoiceStore);
+const { getAllInvoices } = invoiceStore;
 onMounted(() => {
-  getInvoices();
+  getAllInvoices();
 });
 
 const selectedStatus = ref();
@@ -29,6 +25,8 @@ const toggleFilterMenu = (e: any) => {
   console.log(e.value.value);
   console.log(e);
 };
+
+
 </script>
 <template>
   <div>

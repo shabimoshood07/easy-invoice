@@ -7,7 +7,9 @@ import ThemeSwitch from "./ThemeSwitch.vue";
     <div
       class="flex justify-between items-center p-4 2xl:px-0 max-w-[1550px] mx-auto"
     >
-      <LogoComponent />
+      <RouterLink to="/">
+        <LogoComponent />
+      </RouterLink>
       <ThemeSwitch />
     </div>
   </header>
