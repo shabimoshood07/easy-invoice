@@ -15,8 +15,8 @@ const routes = [
     component: Dashboard,
   },
   {
-    path: "/invoice",
-    name: "Invoice details",
+    path: "/invoice/:invoiceId",
+    name: "Invoice",
     component: InvoiceDetails,
   },
 ];

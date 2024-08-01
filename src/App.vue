@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CreateInvoiceModal from "./components/CreateInvoiceModal.vue";
 import Navigation from "./components/Navigation.vue";
 import Toast from "primevue/toast";
 </script>
@@ -8,7 +9,8 @@ import Toast from "primevue/toast";
     <div class="w-full max-w-[1550px] mx-auto p-4 2xl:p-0">
       <RouterView />
     </div>
-    <Toast  position="top-left"/>
+    <Toast position="top-left" />
+    <CreateInvoiceModal />
   </div>
 </template>
 

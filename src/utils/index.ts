@@ -8,5 +8,4 @@ export function formatFirestoreTimestamp(timestamp: {
     timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000
   );
   return format(date, "MMMM dd, yyyy");
-//   return format(date, "MMMM dd, yyyy h:mm:ss a");
 }

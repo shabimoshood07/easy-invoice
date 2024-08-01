@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
-import { reactive, ref, watch } from "vue";
+import { ref, watch } from "vue";
 import FormInput from "./common/FormInput.vue";
 import Select from "primevue/select";
 import DatePicker from "primevue/datepicker";
@@ -11,13 +11,20 @@ import { useToast } from "primevue/usetoast";
 import { db } from "../firebase/firebaseInit";
 import { collection, addDoc } from "firebase/firestore";
 import { useField, useForm } from "vee-validate";
-import { toTypedSchema } from "@vee-validate/zod";
-import * as zod from "zod";
-import { InvoiceItemType } from "../types";
+import { useCreateInvoiceModalStore, useInvoiceStore } from "../store/store";
+import { storeToRefs } from "pinia";
+import { createInvoiceValidationSchema } from "../schemas";
+import { formatFirestoreTimestamp } from "../utils";
+import { onMounted } from "vue";
 
+// invoice modal store
+const invoiceModalStore = useCreateInvoiceModalStore();
+const invoiceStore = useInvoiceStore();
+const { invoiceModalVisible, editedInvoice } = storeToRefs(invoiceModalStore);
+const { toggleInvoiceModalVisible } = invoiceModalStore;
+const { getAllInvoices } = invoiceStore;
+const { invoiceItems } = storeToRefs(invoiceStore);
 const toast = useToast();
-
-const visible = ref(false);
 const discardDialogvisible = ref(false);
 const loading = ref(false);
 
@@ -42,59 +49,8 @@ const initialState = {
   invoiceTotal: 0,
 };
 
-const validationSchema = toTypedSchema(
-  zod.object({
-    billerStreetAddress: zod
-      .string({ required_error: "street is required" })
-      .min(1, { message: "street is required" }),
-    billerCity: zod
-      .string({ required_error: "city is required" })
-      .min(1, { message: "city is required" }),
-    billerZipCode: zod
-      .string({ required_error: "zip code is required" })
-      .min(1, { message: "zip code is required" }),
-    billerCountry: zod
-      .string({ required_error: "country is required" })
-      .min(1, { message: "country is required" }),
-    clientName: zod
-      .string({ required_error: "client name is required" })
-      .min(1, { message: "client name is required" }),
-    clientEmail: zod
-      .string({ required_error: "email is required" })
-      .min(1, { message: "client name is required" })
-      .email({ message: "invalid  email" }),
-    clientStreetAddress: zod
-      .string({ required_error: "street is required" })
-      .min(1, { message: "street is required" }),
-    clientCity: zod
-      .string({ required_error: "city is required" })
-      .min(1, { message: "city is required" }),
-    clientZipCode: zod
-      .string({ required_error: "zip code is required" })
-      .min(1, { message: "zip code is required" }),
-    clientCountry: zod
-      .string({ required_error: "country is required" })
-      .min(1, { message: "country is required" }),
-    productDescription: zod
-      .string({ required_error: "product description is required" })
-      .min(1, { message: "product description is required" }),
-    invoicePending: zod.boolean().nullable(),
-    invoiceDraft: zod.boolean().nullable(),
-    invoicePaid: zod.boolean().nullable(),
-    invoiceDate: zod.date(),
-    paymentDueDate: zod.date().nullable(),
-    paymentTerms: zod.object(
-      {
-        days: zod.string(),
-        value: zod.number(),
-      },
-      { required_error: "select payment terms" }
-    ),
-    invoiceTotal: zod.number().nullable(),
-  })
-);
-const { handleSubmit, resetForm, setFieldValue } = useForm({
-  validationSchema,
+const { handleSubmit, resetForm, setFieldValue, errors } = useForm({
+  validationSchema: createInvoiceValidationSchema,
   validateOnMount: false,
   keepValuesOnUnmount: true,
   initialValues: initialState,
@@ -105,37 +61,37 @@ const paymentTermsData = ref([
   { days: "Net 60 days", value: 60 },
 ]);
 
-const invoiceItems = reactive<InvoiceItemType[]>([]);
-
 const handleSaveDraft = async () => {
   setFieldValue("invoiceDraft", true);
 };
 const handleFormReset = () => {
   resetForm();
-  invoiceItems.splice(0, invoiceItems.length);
 };
 
 const handleCloseModal = () => {
   handleFormReset();
-  visible.value = false;
+  invoiceItems.value = [];
+  editedInvoice.value = null;
   discardDialogvisible.value = false;
+  toggleInvoiceModalVisible();
 };
 
 const deleteInvoiceItem = (id: string) => {
-  const index = invoiceItems.findIndex(
+  const index = invoiceItems.value.findIndex(
     (item: InvoiceItemType) => item.id === id
   );
   if (index !== -1) {
-    invoiceItems.splice(index, 1);
+    invoiceItems.value.splice(index, 1);
   }
 };
 
 const getInvoiceTotal = () => {
   let total = 0;
-  invoiceItems.forEach((item) => {
+  invoiceItems.value.forEach((item) => {
     total += item.total!;
   });
-  setFieldValue("invoiceTotal", total);
+
+  setFieldValue("invoiceTotal", Number(total));
 };
 
 const addNewInvoiceItem = () => {
@@ -146,11 +102,11 @@ const addNewInvoiceItem = () => {
     quantity: 0,
     total: 0,
   };
-  invoiceItems.push(newInvoiceItem);
+  invoiceItems.value.push(newInvoiceItem);
 };
 
 const handlePublishInvoice = handleSubmit(async (values) => {
-  if (invoiceItems.length <= 0) {
+  if (invoiceItems.value.length <= 0) {
     return toast.add({
       severity: "error",
       summary: "Error",
@@ -164,10 +120,8 @@ const handlePublishInvoice = handleSubmit(async (values) => {
     invoiceId: uid(6),
     ...values,
     invoicePending: true,
-    invoiceItemList: invoiceItems,
+    invoiceItemList: invoiceItems.value,
   };
-
-  console.log(newInvoice);
 
   await addDoc(dbBase, newInvoice);
 
@@ -179,15 +133,22 @@ const handlePublishInvoice = handleSubmit(async (values) => {
     life: 3000,
   });
   handleCloseModal();
+  getAllInvoices();
 });
 
-const { value: invoiceDate } = useField("invoiceDate", validationSchema);
+const { value: invoiceDate } = useField(
+  "invoiceDate",
+  createInvoiceValidationSchema
+);
 const { value: paymentTerms, errorMessage: paymentTermsError } = useField(
   "paymentTerms",
-  validationSchema
+  createInvoiceValidationSchema
 );
 
-const { value: paymentDueDate } = useField("paymentDueDate", validationSchema);
+const { value: paymentDueDate } = useField(
+  "paymentDueDate",
+  createInvoiceValidationSchema
+);
 
 watch(paymentTerms, () => {
   // @ts-ignore
@@ -201,29 +162,67 @@ watch(paymentTerms, () => {
   }
 });
 
-watch(invoiceItems, () => {
-  getInvoiceTotal();
+watch(
+  invoiceItems,
+  () => {
+    getInvoiceTotal();
+  },
+  { deep: true }
+);
+
+const setInvoiceFields = (invoice: InvoiceType) => {
+  if (invoice) {
+    setFieldValue("billerStreetAddress", invoice.billerStreetAddress);
+    setFieldValue("billerCity", invoice.billerCity);
+    setFieldValue("billerCountry", invoice.billerCountry);
+    setFieldValue("billerZipCode", invoice.billerZipCode);
+    setFieldValue("clientName", invoice.clientName);
+    setFieldValue("clientEmail", invoice.clientEmail);
+    setFieldValue("clientCountry", invoice.clientCountry);
+    setFieldValue("productDescription", invoice.productDescription);
+    setFieldValue(
+      "paymentDueDate",
+      // @ts-ignore
+      formatFirestoreTimestamp(invoice.paymentDueDate)
+    );
+    setFieldValue("paymentTerms", invoice.paymentTerms);
+    setFieldValue("clientStreetAddress", invoice.clientStreetAddress);
+    setFieldValue("clientZipCode", invoice.clientZipCode);
+    setFieldValue("clientCity", invoice.clientCity);
+    // @ts-ignore
+    setFieldValue("invoiceDate", formatFirestoreTimestamp(invoice.invoiceDate));
+    invoiceItems.value = invoice.invoiceItemList;
+  } else {
+    handleFormReset();
+  }
+};
+
+onMounted(() => {
+  if (editedInvoice.value) {
+    setInvoiceFields(editedInvoice.value);
+  }
+});
+
+watch(editedInvoice, (newInvoice) => {
+  if (newInvoice) {
+    setInvoiceFields(newInvoice);
+  } else {
+    resetForm();
+  }
 });
 </script>
 <template>
   <div>
-    <Button
-      icon="pi pi-plus"
-      label="Create invoice"
-      iconPos="right"
-      @click="() => (visible = true)"
-      class="primary-btn text-base font-semibold"
-    />
     <!-- Create invoice dialog -->
     <Dialog
       :closable="false"
-      v-model:visible="visible"
+      v-model:visible="invoiceModalVisible"
       header="New Invoice"
       position="left"
       :modal="true"
       :draggable="false"
       dismissableMask
-      class="w-full max-w-[700px] m-0 h-full max-h-none rounded-none bg-primary-1 dark:bg-primary-4 border-none"
+      class="w-full max-w-[800px] m-0 h-full max-h-none rounded-none bg-primary-1 dark:bg-primary-4 border-none"
       :pt="{
         title: {
           class: 'text-primary-5 text-2xl dark:text-secondary-1 ',
@@ -246,6 +245,7 @@ watch(invoiceItems, () => {
               Bill from
             </h1>
             <FormInput label="street address" name="billerStreetAddress" />
+            <!-- :value="editedInvoice?.billerStreetAddress" -->
             <div class="grid md:grid-cols-3 gap-2">
               <FormInput label="city" name="billerCity" />
               <FormInput label="zip cdoe" type="number" name="billerZipCode" />
@@ -336,7 +336,7 @@ watch(invoiceItems, () => {
         </div>
 
         <InvoiceItemsList
-          :invoiceItems="invoiceItems"
+          :invoiceItems="editedInvoice?.invoiceItemList ?? invoiceItems"
           @deleteInvoiceItem="deleteInvoiceItem"
         />
         <Button

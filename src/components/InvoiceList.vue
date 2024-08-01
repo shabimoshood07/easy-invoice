@@ -1,19 +1,24 @@
 <script setup lang="ts">
 import DataTable from "primevue/datatable";
-import { CreateInvoiceFormDataType } from "../types";
 import Loading from "./common/Loading.vue";
 import { RouterLink } from "vue-router";
 import { formatFirestoreTimestamp } from "../utils";
-import CreateInvoiceModal from "./CreateInvoiceModal.vue";
-import { ref } from "vue";
-const visible = ref(false);
+import { useCreateInvoiceModalStore } from "../store/store";
+import { storeToRefs } from "pinia";
 
 interface IProps {
-  invoices: (CreateInvoiceFormDataType & { id: string })[];
+  invoices: InvoiceType[];
   isLoadingInvoices: boolean;
 }
 const props = defineProps<IProps>();
-console.log(props.invoices);
+const invoiceModalStore = useCreateInvoiceModalStore();
+const { editedInvoice } = storeToRefs(invoiceModalStore);
+const { toggleInvoiceModalVisible } = invoiceModalStore;
+
+const handleEditClick = (invoice: InvoiceType) => {
+  editedInvoice.value = invoice;
+  toggleInvoiceModalVisible();
+};
 </script>
 <template>
   <div
@@ -22,45 +27,75 @@ console.log(props.invoices);
   >
     <Loading />
   </div>
-  <div v-else>
-    <!-- v-model:selection="selectedProducts" -->
-    <!-- :filters="filters" -->
+  <div v-else class="my-10">
     <DataTable
-      ref="dt"
-      :value="invoices"
-      dataKey="id"
-      :paginator="true"
-      :rows="10"
+      unstyled
       paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-      :rowsPerPageOptions="[5, 10, 25]"
-      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} products"
+      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} invoices"
+      :paginator="true"
+      :value="invoices"
+      :rows="10"
+      dataKey="invoiceList"
+      :pt="{
+        table: {
+          class: 'w-full',
+        },
+        thead: {
+          class: 'bg-primary-1 dark:bg-primary-4 dark:text-secondary-1',
+        },
+        tbody: {
+          class: 'bg-secondary-2 dark:bg-primary-3 dark:text-secondary-1',
+        },
+        paginator: {
+          class: 'border-4 bg-red-500',
+        },
+        footer: {
+          class: 'border-4 bg-red-500',
+        },
+        paginatorContainer: {
+          class: 'border-4 !bg-red-500',
+        },
+      }"
     >
-      <template #header>
+      <!-- <template #header>
         <div class="flex flex-wrap gap-2 items-center justify-between">
           <IconField>
             <InputIcon>
               <i class="pi pi-search" />
             </InputIcon>
-            <!-- v-model="filters['global'].value" -->
             <InputText
+              v-model="filters['global'].value"
               placeholder="Search..."
               class="h-10 text-base border-2"
             />
           </IconField>
         </div>
-      </template>
+      </template> -->
 
-      <Column
+      <!-- <Column
         selectionMode="multiple"
         style="width: 3rem"
         :exportable="false"
-      ></Column>
+      ></Column> -->
 
       <Column
         field="invoiceId"
         header="Invoice No"
         sortable
         style="min-width: 10rem"
+        frozen
+        :pt="{
+          headerCell: {
+            class:
+              'text-left p-4 hover:bg-secondary-2 dark:hover:bg-primary-3 cursor-pointer duration-500 items-center',
+          },
+          bodyCell: {
+            class: 'text-lg  p-4 text-left',
+          },
+          columnHeaderContent: {
+            class: 'flex gap-2 items-center',
+          },
+        }"
       >
         <template #body="slotProps"> #{{ slotProps.data.invoiceId }} </template>
       </Column>
@@ -70,10 +105,22 @@ console.log(props.invoices);
         header="Due date"
         sortable
         style="min-width: 10rem"
+        :pt="{
+          headerCell: {
+            class:
+              'text-left p-4 hover:bg-secondary-2 dark:hover:bg-primary-3 cursor-pointer duration-500',
+          },
+          bodyCell: {
+            class: '!text-lg  p-4 text-left',
+          },
+          columnHeaderContent: {
+            class: 'flex gap-2 items-center',
+          },
+        }"
       >
         <template #body="slotProps">
           <p v-if="slotProps.data.paymentDueDate">
-            Due {{ formatFirestoreTimestamp(slotProps.data.paymentDueDate) }}
+            {{ formatFirestoreTimestamp(slotProps.data.paymentDueDate) }}
           </p>
         </template>
       </Column>
@@ -82,27 +129,40 @@ console.log(props.invoices);
         header="Client name"
         sortable
         style="min-width: 12rem; text-transform: capitalize"
+        :pt="{
+          headerCell: {
+            class:
+              'text-left p-4 hover:bg-secondary-2 dark:hover:bg-primary-3 cursor-pointer duration-500',
+          },
+          bodyCell: {
+            class: '!text-lg  p-4 text-left',
+          },
+          columnHeaderContent: {
+            class: 'flex gap-2 items-center',
+          },
+        }"
       ></Column>
-
-      <!-- <Column header="Image">
-        <template #body="slotProps">
-          <img
-            :src="`https://primefaces.org/cdn/primevue/images/product/${slotProps.data.image}`"
-            :alt="slotProps.data.image"
-            class="rounded"
-            style="width: 64px"
-          />
-        </template>
-      </Column> -->
 
       <Column
         field="invoiceTotal"
         header="Total"
         sortable
         style="min-width: 8rem"
+        :pt="{
+          headerCell: {
+            class:
+              'text-left p-4 hover:bg-secondary-2 dark:hover:bg-primary-3 cursor-pointer duration-500',
+          },
+          bodyCell: {
+            class: '!text-lg  p-4 text-left',
+          },
+          columnHeaderContent: {
+            class: 'flex gap-2 items-center',
+          },
+        }"
       >
         <template #body="slotProps">
-          &#8358; {{ slotProps.data.invoiceTotal }}
+          &#8358; {{ slotProps.data.invoiceTotal.toLocaleString() }}
         </template>
       </Column>
 
@@ -111,12 +171,41 @@ console.log(props.invoices);
         header="Invoice date"
         sortable
         style="min-width: 10rem"
+        :pt="{
+          headerCell: {
+            class:
+              'text-left p-4 hover:bg-secondary-2 dark:hover:bg-primary-3 cursor-pointer duration-500',
+          },
+          bodyCell: {
+            class: '!text-lg  p-4 text-left',
+          },
+          columnHeaderContent: {
+            class: 'flex gap-2 items-center',
+          },
+        }"
       >
         <template #body="slotProps">
           {{ formatFirestoreTimestamp(slotProps.data.invoiceDate) }}
         </template>
       </Column>
-      <Column field="" header="Status" sortable style="min-width: 10rem">
+      <Column
+        field=""
+        header="Status"
+        sortable
+        style="min-width: 10rem"
+        :pt="{
+          headerCell: {
+            class:
+              'text-left p-4 hover:bg-secondary-2 dark:hover:bg-primary-3 cursor-pointer duration-500',
+          },
+          bodyCell: {
+            class: '!text-lg  p-4 text-left',
+          },
+          columnHeaderContent: {
+            class: 'flex gap-2 items-center',
+          },
+        }"
+      >
         <template #body="slotProps">
           <p v-if="slotProps.data.invoicePending">Pending</p>
           <p v-if="slotProps.data.invoiceDraft">Draft</p>
@@ -147,13 +236,25 @@ console.log(props.invoices);
       <Column :exportable="false" style="min-width: 12rem">
         <template #body="slotProps">
           <!-- @click="editProduct(slotProps.data)" -->
-          <Button icon="pi pi-pencil" outlined rounded class="mr-2" />
+          <Button
+            icon="pi pi-pencil"
+            outlined
+            rounded
+            class="text-yellow-500"
+            @click="handleEditClick(slotProps.data)"
+          />
           <!-- @click="confirmDeleteProduct(slotProps.data)" -->
-          <Button icon="pi pi-trash" outlined rounded severity="danger" />
+          <Button
+            icon="pi pi-trash"
+            class="text-red-500"
+            outlined
+            rounded
+            severity="danger"
+          />
           <RouterLink
             :to="{
-              name: 'Invoice details',
-              params: { invoiceId: slotProps.data.id },
+              name: 'Invoice',
+              params: { invoiceId: slotProps.data.invoiceId },
             }"
           >
             <Button icon="pi pi-eye" outlined rounded severity="danger" />
@@ -162,7 +263,10 @@ console.log(props.invoices);
       </Column>
     </DataTable>
   </div>
-  <!-- <CreateInvoiceModal /> -->
 </template>
 
-<style scoped></style>
+<style scoped>
+.table-cell-header {
+  @apply hover:bg-primary-3;
+}
+</style>

@@ -12,7 +12,7 @@ const imgClass = computed(() => {
       <div class="flex flex-col justify-center items-center gap-0 relative">
         <img src="/src/assets/logo.svg" alt="logo" :class="imgClass" />
         <p
-          class="text-lg italic font-semibold text-primary-5 dark:text-secondary-1 hidden md:block capitalize absolute -bottom-3"
+          class="text-lg -mt-2 italic font-semibold text-primary-5 dark:text-secondary-1 hidden md:block capitalize"
         >
           EasyInvoice
         </p>

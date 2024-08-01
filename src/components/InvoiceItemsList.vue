@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import InputNumber from "primevue/inputnumber";
 import { ref } from "vue";
 
 const props = defineProps<{
@@ -41,32 +42,67 @@ const deleteItem = () => {
       @row-edit-save="onRowEditSave"
       v-model:editingRows="editingRows"
     >
-      <Column frozen field="itemName" header="Item name" style="width: 40%">
+      <Column
+        field="itemName"
+        header="Item name"
+        style="min-width: 200px"
+      >
         <template #editor="{ data, field }">
           <InputText v-model="data[field]" class="w-[200px] border-2" />
         </template>
       </Column>
-      <Column field="price" header="Price" style="">
+      <Column field="price" header="Price (&#8358;)" style="">
         <template #editor="{ data, field }">
-          <InputText
+          <InputNumber
             v-model="data[field]"
-            class="w-[100px] border-2"
-            type="number"
-          />
+            class="w-[300px] border-2"
+            inputId="integeronly"
+            :min="0"
+            :step="100"
+            showButtons
+            buttonLayout="horizontal"
+          >
+            <template #incrementbuttonicon>
+              <span class="pi pi-plus" />
+            </template>
+            <template #decrementbuttonicon>
+              <span class="pi pi-minus" />
+            </template>
+          </InputNumber>
         </template>
       </Column>
       <Column field="quantity" header="Quantity" style="">
         <template #editor="{ data, field }">
-          <InputText
+          <InputNumber
             v-model="data[field]"
-            class="w-[100px] border-2"
-            type="number"
-          />
+            showButtons
+            class="w-[150px] border-2"
+            inputId="integeronly"
+            fluid
+            buttonLayout="horizontal"
+            :min="0"
+          >
+            <template #incrementbuttonicon>
+              <span class="pi pi-plus" />
+            </template>
+            <template #decrementbuttonicon>
+              <span class="pi pi-minus" />
+            </template>
+          </InputNumber>
         </template>
       </Column>
-      <Column field="total" header="Total" style="">
+      <Column field="total" header="Total (&#8358;)" style="">
         <template #body="{ data, field }">
-          ${{ (data[field] = data.quantity * data.price) }}
+          <!-- <InputNumber
+            v-model="data.quantity * data.price"
+            class="w-[150px] border-2"
+            inputId="integeronly"
+            fluid
+            :min="0"
+            disabled
+          /> -->
+          <!-- ${{ (data.quantity * data.price).toLocaleString() }} -->
+          {{ (data[field] = data.quantity * data.price) }}
         </template>
       </Column>
       <Column

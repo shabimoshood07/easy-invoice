@@ -1,17 +1,28 @@
 <script setup lang="ts">
 import Select from "primevue/select";
 import { onMounted, ref } from "vue";
-import CreateInvoiceModal from "../components/CreateInvoiceModal.vue";
 import InvoiceList from "../components/InvoiceList.vue";
-import { useInvoiceStore } from "../store/store";
+import { useCreateInvoiceModalStore, useInvoiceStore } from "../store/store";
 import { storeToRefs } from "pinia";
-const invoiceStore = useInvoiceStore();
 
-const { invoices, isLoadingInvoices } = storeToRefs(invoiceStore);
+// Invoice store
+const invoiceStore = useInvoiceStore();
+const { invoices, isLoadingInvoices, invoiceItems } = storeToRefs(invoiceStore);
 const { getAllInvoices } = invoiceStore;
+
+// Invoice modal store
+const invoiceModalStore = useCreateInvoiceModalStore();
+const { editedInvoice, invoiceModalVisible } = storeToRefs(invoiceModalStore);
+
 onMounted(() => {
   getAllInvoices();
 });
+
+const handleClick = () => {
+  editedInvoice.value = null;
+  invoiceItems.value = [];
+  invoiceModalVisible.value = true;
+};
 
 const selectedStatus = ref();
 const statuses = ref([
@@ -20,13 +31,6 @@ const statuses = ref([
   { status: "Paid", value: "paid" },
   { status: "Clear filter", value: "clear" },
 ]);
-
-const toggleFilterMenu = (e: any) => {
-  console.log(e.value.value);
-  console.log(e);
-};
-
-
 </script>
 <template>
   <div>
@@ -35,8 +39,13 @@ const toggleFilterMenu = (e: any) => {
         Invoices
       </h1>
       <div class="flex items-center gap-2 flex-wrap">
-        <!-- create invoice modal -->
-        <CreateInvoiceModal />
+        <Button
+          icon="pi pi-plus"
+          label="Create invoice"
+          iconPos="right"
+          @click="handleClick"
+          class="primary-btn text-base font-semibold"
+        />
         <Select
           v-model="selectedStatus"
           :options="statuses"
@@ -59,7 +68,6 @@ const toggleFilterMenu = (e: any) => {
                 'hover:!text-primary-5 !text-secondary-1 p-2 dark:hover:bg-secondary-1 dark:!text-primary-5 ',
             },
           }"
-          @change="toggleFilterMenu"
         />
       </div>
     </div>
