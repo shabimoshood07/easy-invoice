@@ -42,6 +42,8 @@ export const createInvoiceValidationSchema = toTypedSchema(
     invoicePaid: zod.boolean().nullable(),
     invoiceDate: zod.date(),
     paymentDueDate: zod.date().nullable(),
+    invoiceId: zod.string().optional(),
+    id: zod.string().optional(),
     paymentTerms: zod.object(
       {
         days: zod.string(),

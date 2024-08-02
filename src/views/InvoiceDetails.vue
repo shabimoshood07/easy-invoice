@@ -1,32 +1,122 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
 import { useCreateInvoiceModalStore, useInvoiceStore } from "../store/store";
-import { onMounted, ref, toRef, watch } from "vue";
+import { computed, onMounted, ref } from "vue";
 import Loading from "../components/common/Loading.vue";
 import { storeToRefs } from "pinia";
 import { formatFirestoreTimestamp } from "../utils";
+import { useToast } from "primevue/usetoast";
+import Button from "primevue/button";
+import Dialog from "primevue/dialog";
+
+// variables
+const toast = useToast();
 const route = useRoute();
 const router = useRouter();
 const invoiceId = route.params.invoiceId as string;
 const invoiceStore = useInvoiceStore();
-const { getInvoice } = invoiceStore;
+const { getInvoice, markInvoiceAsPaid, markInvoiceAsPending, deleteInvoice } =
+  invoiceStore;
 const { isLoadingInvoice } = storeToRefs(invoiceStore);
 const invoiceModalStore = useCreateInvoiceModalStore();
 const { editedInvoice } = storeToRefs(invoiceModalStore);
 const { toggleInvoiceModalVisible } = invoiceModalStore;
 const invoice = ref<InvoiceType | null>(null);
-const error = ref<string | null>(null);
+const errorMsg = ref<string | null>(null);
+const isUpdating = ref<boolean>(false);
+const showDeleteInvoiceModal = ref<boolean>(false);
+
+const getInvoiceDetails = async () => {
+  try {
+    const data = await getInvoice(invoiceId);
+    invoice.value = data.invoices[0];
+  } catch (error: any) {
+    errorMsg.value = error.message;
+  }
+};
 
 onMounted(async () => {
-  const data = await getInvoice(invoiceId);
-  if (data.error) return (error.value = data.error);
-  invoice.value = data.invoices[0];
+  getInvoiceDetails();
 });
 
 const handleEditClick = (invoice: InvoiceType) => {
   editedInvoice.value = invoice;
   toggleInvoiceModalVisible();
 };
+const handleMarkAsPaid = async () => {
+  try {
+    isUpdating.value = true;
+    const data = await markInvoiceAsPaid(invoice.value!);
+    toast.add({
+      severity: "success",
+      summary: "Success",
+      detail: data.message,
+      life: 3000,
+    });
+    getInvoiceDetails();
+  } catch (error: any) {
+    toast.add({
+      severity: "error",
+      summary: "Error",
+      detail: error.message,
+      life: 3000,
+    });
+  } finally {
+    isUpdating.value = false;
+  }
+};
+const handleMarkAsPending = async () => {
+  try {
+    isUpdating.value = true;
+    const data = await markInvoiceAsPending(invoice.value!);
+    toast.add({
+      severity: "success",
+      summary: "Success",
+      detail: data.message,
+      life: 3000,
+    });
+    getInvoiceDetails();
+  } catch (error: any) {
+    toast.add({
+      severity: "error",
+      summary: "Error",
+      detail: error.message,
+      life: 3000,
+    });
+  } finally {
+    isUpdating.value = false;
+  }
+};
+const handleDeleteInvoice = async () => {
+  try {
+    isUpdating.value = true;
+    const data = await deleteInvoice(invoice.value!);
+    toast.add({
+      severity: "success",
+      summary: "Success",
+      detail: data.message,
+      life: 3000,
+    });
+    router.replace({ name: "Dashboard" });
+  } catch (error: any) {
+    toast.add({
+      severity: "error",
+      summary: "Error",
+      detail: error.message,
+      life: 3000,
+    });
+  } finally {
+    isUpdating.value = false;
+  }
+};
+
+const invoiceTotal = computed(() => {
+  let total = 0;
+  invoice.value?.invoiceItemList.forEach((item) => {
+    total += item.total!;
+  });
+  return total;
+});
 </script>
 <template>
   <div class="my-8">
@@ -47,7 +137,7 @@ const handleEditClick = (invoice: InvoiceType) => {
     <!-- Details-->
     <div v-if="!isLoadingInvoice && invoice" class="space-y-4 my-10">
       <div
-        class="bg-primary-1 dark:bg-primary-4 rounded-md w-full p-2 py-4 flex justify-between items-center flex-wrap gap-3"
+        class="bg-primary-1/40 dark:bg-primary-4 rounded-md w-full p-2 py-4 flex justify-between items-center flex-wrap gap-3"
       >
         <div class="flex gap-2 items-center">
           <h1 class="text-lg font-medium dark:text-secondary-1">Status</h1>
@@ -55,25 +145,60 @@ const handleEditClick = (invoice: InvoiceType) => {
             v-if="invoice?.invoicePending"
             class="bg-red-400 text-secondary-1 p-2 rounded-md flex gap-3 items-center"
           >
-            <i class="pi pi-circle-fill text-[8px]"></i>
+            <i class="pi pi-circle-fill text-[10px] text-red-900"></i>
             Pending
           </p>
-          <p v-if="invoice?.invoicePaid">Paid</p>
-          <p v-if="invoice?.invoiceDraft">Draft</p>
+          <p
+            v-if="invoice?.invoicePaid"
+            class="bg-green-600 text-lg text-secondary-2 px-2 py-1 rounded-md flex gap-3 items-center justify-center w-[100px]"
+          >
+            <i class="pi pi-circle-fill text-[10px] text-green-900"></i>
+            Paid
+          </p>
+          <p
+            v-if="invoice?.invoiceDraft"
+            class="bg-yello-600 text-lg text-secondary-2 px-2 py-1 rounded-md flex gap-3 items-center justify-center w-[100px]"
+          >
+            <i class="pi pi-circle-fill text-[10px] text-yellow-900"></i>
+            Draft
+          </p>
         </div>
         <div class="flex gap-2 flex-wrap">
           <Button
             label="Edit"
-            class="primary-btn w-[100px]"
+            class="primary-btn w-[100px] disabled:dark:hover:bg-secondary-1 disabled:hover:bg-primary-3"
+            :disabled="invoice.invoicePaid"
             @click="handleEditClick(invoice)"
           />
-          <Button label="Mark as paid" class="primary-btn" />
-          <Button label="Delete" class="warning-btn w-[100px]" />
+          <Button
+            v-if="invoice.invoicePending"
+            label="Mark as paid"
+            :loading="isUpdating"
+            :disabled="isUpdating"
+            class="primary-btn"
+            @click="handleMarkAsPaid"
+          />
+
+          <Button
+            v-else
+            label="Mark as pending"
+            :loading="isUpdating"
+            :disabled="isUpdating"
+            loadingIcon="pi pi-spinner pi-spin"
+            class="primary-btn"
+            @click="handleMarkAsPending"
+          />
+          <Button
+            label="Delete"
+            :disabled="isUpdating"
+            class="warning-btn w-[100px]"
+            @click="showDeleteInvoiceModal = true"
+          />
         </div>
       </div>
 
       <div
-        class="bg-primary-1 dark:bg-primary-4 rounded-md w-full p-4 lg:p-6 dark:text-secondary-1 text-primary-5 space-y-10"
+        class="bg-primary-1/40 dark:bg-primary-4 rounded-md w-full p-4 lg:p-6 dark:text-secondary-1 text-primary-5 space-y-10"
       >
         <div class="flex justify-between flex-wrap w-full">
           <div>
@@ -213,9 +338,7 @@ const handleEditClick = (invoice: InvoiceType) => {
             class="flex justify-between bg-primary-3 p-6 rounded-b-lg text-secondary-1"
           >
             <h1 class="text-xl capitalize">Amount due</h1>
-            <h1 class="text-3xl">
-              &#8358;{{ invoice.invoiceTotal.toLocaleString() }}
-            </h1>
+            <h1 class="text-3xl">&#8358;{{ invoiceTotal.toLocaleString() }}</h1>
           </div>
         </div>
       </div>
@@ -223,7 +346,7 @@ const handleEditClick = (invoice: InvoiceType) => {
 
     <!-- If error -->
     <div
-      v-if="error && !isLoadingInvoice"
+      v-if="errorMsg && !isLoadingInvoice"
       class="flex flex-col justify-center items-center h-[40dvh] gap-4"
     >
       <i
@@ -232,10 +355,56 @@ const handleEditClick = (invoice: InvoiceType) => {
       <p
         class="text-4xl text-center dark:text-secondary-1 text-primary-5 font-semibold"
       >
-        {{ error }}!!
+        {{ errorMsg }}!!
       </p>
     </div>
   </div>
+
+  <Dialog
+    v-model:visible="showDeleteInvoiceModal"
+    modal
+    header="Discard changes"
+    :style="{ width: '25rem' }"
+    :closable="false"
+    :pt="{
+      root: {
+        class: 'dark:bg-primary-5 dark:',
+      },
+      title: {
+        class: 'dark:text-secondary-1',
+      },
+      mask: {
+        class: 'backdrop-blur-sm',
+      },
+    }"
+  >
+    <div class="space-y-4 mb-6">
+      <p class="text-primary-5 dark:text-surface-400 block text-xl">
+        Invoice will be deleted permanently
+      </p>
+      <p class="text-primary-5 text-base dark:text-surface-400 block mb-8">
+        This changes can not be undone
+      </p>
+    </div>
+
+    <div class="flex justify-end gap-2">
+      <Button
+        type="button"
+        label="Delete"
+        :loading="isUpdating"
+        severity="secondary"
+        @click="handleDeleteInvoice"
+        class="warning-btn w-[100px]"
+      ></Button>
+      <Button
+        type="button"
+        label="Cancel"
+        class="primary-btn w-[100px]"
+        :disabled="isUpdating"
+        @click="showDeleteInvoiceModal = false"
+      ></Button>
+    </div>
+  </Dialog>
 </template>
 
 <style scoped>

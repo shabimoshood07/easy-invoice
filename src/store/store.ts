@@ -1,8 +1,25 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  updateDoc,
+  where,
+  deleteDoc,
+} from "firebase/firestore";
 import { db } from "../firebase/firebaseInit";
+import { uid } from "uid";
 
+const removeUndefinedId = (obj: any) => {
+  if (obj.id === undefined) {
+    delete obj.id;
+  }
+  return obj;
+};
 export const useInvoiceStore = defineStore("invoice", () => {
   const invoices = ref<InvoiceType[]>([]);
   const isLoadingInvoices = ref<boolean>(false);
@@ -27,7 +44,7 @@ export const useInvoiceStore = defineStore("invoice", () => {
   };
   const getInvoice = async (
     invoiceId: string
-  ): Promise<{ invoices: InvoiceType[] } | { error: string }> => {
+  ): Promise<{ invoices: InvoiceType[] }> => {
     try {
       isLoadingInvoice.value = true;
       const dbBase = collection(db, "invoice");
@@ -35,8 +52,7 @@ export const useInvoiceStore = defineStore("invoice", () => {
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
-        console.log("No matching documents.");
-        return { error: "No matching documents" };
+        throw new Error("No matching documents");
       }
 
       const invoices = querySnapshot.docs.map((doc) => ({
@@ -45,12 +61,102 @@ export const useInvoiceStore = defineStore("invoice", () => {
       })) as InvoiceType[];
 
       return { invoices };
-    } catch (error) {
-      return { error: "An error occured" };
+    } catch (error: any) {
+      throw new Error(error.message);
     } finally {
       isLoadingInvoice.value = false;
     }
   };
+
+  const createNewInvoice = async (newInvoiceData: any) => {
+    try {
+      const dbBase = collection(db, "invoice");
+      const newInvoice = {
+        ...newInvoiceData,
+        invoiceId: uid(6),
+        invoicePending: true,
+        invoiceItemList: invoiceItems.value,
+      };
+      const cleanedInvoice = removeUndefinedId(newInvoice);
+      await addDoc(dbBase, cleanedInvoice);
+      return { message: "invoice created successfully" };
+    } catch (error: any) {
+      console.log(error);
+
+      throw new Error(error.message);
+    }
+  };
+
+  const updateInvoice = async (newInvoiceData: any) => {
+    try {
+      const id = newInvoiceData.id;
+      const updateInvoiceRef = doc(db, "invoice", id);
+      const docSnapshot = await getDoc(updateInvoiceRef);
+      if (!docSnapshot.exists()) {
+        throw new Error("document does not exist");
+      }
+      await updateDoc(updateInvoiceRef, {
+        ...newInvoiceData,
+      });
+
+      return { message: "invoice updated successfully" };
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  };
+
+  const markInvoiceAsPaid = async (newInvoiceData: InvoiceType) => {
+    try {
+      const id = newInvoiceData.id;
+      const updateInvoiceRef = doc(db, "invoice", id);
+      const docSnapshot = await getDoc(updateInvoiceRef);
+      if (!docSnapshot.exists()) {
+        throw new Error("document does not exist");
+      }
+      await updateDoc(updateInvoiceRef, {
+        invoicePending: null,
+        invoicePaid: true,
+      });
+
+      return { message: "invoice updated successfully" };
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  };
+  const markInvoiceAsPending = async (newInvoiceData: InvoiceType) => {
+    try {
+      const id = newInvoiceData.id;
+      const updateInvoiceRef = doc(db, "invoice", id);
+      const docSnapshot = await getDoc(updateInvoiceRef);
+      if (!docSnapshot.exists()) {
+        throw new Error("document does not exist");
+      }
+      await updateDoc(updateInvoiceRef, {
+        invoicePending: true,
+        invoicePaid: false,
+      });
+
+      return { message: "invoice updated successfully" };
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  };
+
+  const deleteInvoice = async (newInvoiceData: any) => {
+    try {
+      const id = newInvoiceData.id;
+      const deleteInvoiceRef = doc(db, "invoice", id);
+      const docSnapshot = await getDoc(deleteInvoiceRef);
+      if (!docSnapshot.exists()) {
+        throw new Error("document does not exist");
+      }
+      await deleteDoc(deleteInvoiceRef);
+      return { message: "invoice deleted successfully" };
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  };
+
   return {
     invoices,
     isLoadingInvoices,
@@ -58,6 +164,11 @@ export const useInvoiceStore = defineStore("invoice", () => {
     getInvoice,
     invoiceItems,
     isLoadingInvoice,
+    createNewInvoice,
+    updateInvoice,
+    markInvoiceAsPaid,
+    markInvoiceAsPending,
+    deleteInvoice,
   };
 });
 

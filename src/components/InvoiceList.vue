@@ -5,6 +5,7 @@ import { RouterLink } from "vue-router";
 import { formatFirestoreTimestamp } from "../utils";
 import { useCreateInvoiceModalStore } from "../store/store";
 import { storeToRefs } from "pinia";
+import Button from "primevue/button";
 
 interface IProps {
   invoices: InvoiceType[];
@@ -21,13 +22,15 @@ const handleEditClick = (invoice: InvoiceType) => {
 };
 </script>
 <template>
+  <!-- Loading -->
   <div
     v-if="props.isLoadingInvoices"
     class="flex justify-center items-center min-h-[60vh]"
   >
     <Loading />
   </div>
-  <div v-else class="my-10">
+  <!-- invoice list -->
+  <div v-if="props.invoices && !props.isLoadingInvoices" class="my-10">
     <DataTable
       unstyled
       paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
@@ -57,27 +60,18 @@ const handleEditClick = (invoice: InvoiceType) => {
         },
       }"
     >
-      <!-- <template #header>
-        <div class="flex flex-wrap gap-2 items-center justify-between">
-          <IconField>
-            <InputIcon>
-              <i class="pi pi-search" />
-            </InputIcon>
-            <InputText
-              v-model="filters['global'].value"
-              placeholder="Search..."
-              class="h-10 text-base border-2"
-            />
-          </IconField>
+      <template #empty>
+        <div
+          class="w-full flex justify-center flex-col items-center p-14 gap-6"
+        >
+          <h1 class="dark:text-secondary-1 text-primary-5 text-3xl">
+            No Invoices found
+          </h1>
+          <h1 class="dark:text-secondary-1 text-primary-5 text-xl italic">
+            Invoices created will appear here
+          </h1>
         </div>
-      </template> -->
-
-      <!-- <Column
-        selectionMode="multiple"
-        style="width: 3rem"
-        :exportable="false"
-      ></Column> -->
-
+      </template>
       <Column
         field="invoiceId"
         header="Invoice No"
@@ -207,49 +201,38 @@ const handleEditClick = (invoice: InvoiceType) => {
         }"
       >
         <template #body="slotProps">
-          <p v-if="slotProps.data.invoicePending">Pending</p>
-          <p v-if="slotProps.data.invoiceDraft">Draft</p>
-          <p v-if="slotProps.data.invoicePaid">Paid</p>
+          <p
+            v-if="slotProps.data.invoicePending"
+            class="bg-red-400 text-secondary-1 text-base px-2 py-1 rounded-md flex gap-3 items-center justify-start w-[100px]"
+          >
+            <i class="pi pi-circle-fill text-[10px] text-red-900"></i>
+            Pending
+          </p>
+          <p
+            v-if="slotProps.data.invoicePaid"
+            class="bg-green-600 text-base text-secondary-2 px-2 py-1 rounded-md flex gap-3 items-center justify-start w-[100px]"
+          >
+            <i class="pi pi-circle-fill text-[10px] text-green-900"></i>
+            Paid
+          </p>
+          <p
+            v-if="slotProps.data.invoiceDraft"
+            class="bg-yello-600 text-base text-secondary-2 px-2 py-1 rounded-md flex gap-3 items-center justify-start w-[100px]"
+          >
+            <i class="pi pi-circle-fill text-[10px] text-yellow-900"></i>
+            Draft
+          </p>
         </template>
       </Column>
 
-      <!-- <Column field="rating" header="Reviews" sortable style="min-width: 12rem">
-        <template #body="slotProps">
-          <Rating :modelValue="slotProps.data.rating" :readonly="true" />
-        </template>
-      </Column> -->
-      <!-- 
-      <Column
-        field="inventoryStatus"
-        header="Status"
-        sortable
-        style="min-width: 12rem"
-      >
-        <template #body="slotProps">
-          <Tag
-            :value="slotProps.data.inventoryStatus"
-            :severity="getStatusLabel(slotProps.data.inventoryStatus)"
-          />
-        </template>
-      </Column> -->
-
       <Column :exportable="false" style="min-width: 12rem">
         <template #body="slotProps">
-          <!-- @click="editProduct(slotProps.data)" -->
           <Button
             icon="pi pi-pencil"
             outlined
             rounded
             class="text-yellow-500"
             @click="handleEditClick(slotProps.data)"
-          />
-          <!-- @click="confirmDeleteProduct(slotProps.data)" -->
-          <Button
-            icon="pi pi-trash"
-            class="text-red-500"
-            outlined
-            rounded
-            severity="danger"
           />
           <RouterLink
             :to="{
@@ -262,6 +245,24 @@ const handleEditClick = (invoice: InvoiceType) => {
         </template>
       </Column>
     </DataTable>
+  </div>
+
+  <!-- error -->
+  <div
+    v-if="!props.invoices && !props.isLoadingInvoices"
+    class="w-full flex justify-center flex-col items-center p-14 gap-6 h-[40dvh]"
+  >
+    <i
+      class="pi pi-file-word text-6xl dark:text-secondary-1 text-primary-5"
+    ></i>
+    <p class="dark:text-secondary-1 text-primary-5 text-3xl">
+      Error Loading invoices!!
+    </p>
+    <Button
+      label="Retry"
+      :loading="props.isLoadingInvoices"
+      :disabled="props.isLoadingInvoices"
+    />
   </div>
 </template>
 

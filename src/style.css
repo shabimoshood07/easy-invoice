@@ -9,11 +9,11 @@
 }
 
 body {
-    @apply bg-secondary-1 dark:bg-primary-5
+    @apply bg-secondary-1 dark:bg-primary-5 font-[500] tracking-wide
 }
 
 .primary-btn {
-    @apply bg-primary-3 hover:bg-primary-4 p-2 text-secondary-1 dark:bg-secondary-1 dark:hover:bg-primary-1 dark:text-primary-5 border-transparent
+    @apply bg-primary-5 hover:bg-primary-3 p-2 text-secondary-1 dark:bg-secondary-1 dark:hover:bg-primary-1 dark:text-primary-5 border-transparent
 }
 
 .warning-btn {

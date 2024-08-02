@@ -8,21 +8,23 @@ import DatePicker from "primevue/datepicker";
 import InvoiceItemsList from "./InvoiceItemsList.vue";
 import { uid } from "uid";
 import { useToast } from "primevue/usetoast";
-import { db } from "../firebase/firebaseInit";
-import { collection, addDoc } from "firebase/firestore";
 import { useField, useForm } from "vee-validate";
 import { useCreateInvoiceModalStore, useInvoiceStore } from "../store/store";
 import { storeToRefs } from "pinia";
 import { createInvoiceValidationSchema } from "../schemas";
 import { formatFirestoreTimestamp } from "../utils";
 import { onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
+const route = useRoute();
+const router = useRouter();
 // invoice modal store
 const invoiceModalStore = useCreateInvoiceModalStore();
 const invoiceStore = useInvoiceStore();
 const { invoiceModalVisible, editedInvoice } = storeToRefs(invoiceModalStore);
 const { toggleInvoiceModalVisible } = invoiceModalStore;
-const { getAllInvoices } = invoiceStore;
+const { getAllInvoices, createNewInvoice, updateInvoice, getInvoice } =
+  invoiceStore;
 const { invoiceItems } = storeToRefs(invoiceStore);
 const toast = useToast();
 const discardDialogvisible = ref(false);
@@ -49,7 +51,7 @@ const initialState = {
   invoiceTotal: 0,
 };
 
-const { handleSubmit, resetForm, setFieldValue, errors } = useForm({
+const { handleSubmit, resetForm, setFieldValue } = useForm({
   validationSchema: createInvoiceValidationSchema,
   validateOnMount: false,
   keepValuesOnUnmount: true,
@@ -114,26 +116,60 @@ const handlePublishInvoice = handleSubmit(async (values) => {
       life: 3000,
     });
   }
-  loading.value = true;
-  const dbBase = collection(db, "invoice");
-  const newInvoice = {
-    invoiceId: uid(6),
-    ...values,
-    invoicePending: true,
-    invoiceItemList: invoiceItems.value,
-  };
 
-  await addDoc(dbBase, newInvoice);
-
-  loading.value = false;
-  toast.add({
-    severity: "success",
-    summary: "Success",
-    detail: "Invoice created successfully",
-    life: 3000,
-  });
-  handleCloseModal();
-  getAllInvoices();
+  if (!editedInvoice.value) {
+    try {
+      loading.value = true;
+      await createNewInvoice(values);
+      toast.add({
+        severity: "success",
+        summary: "Success",
+        detail: "Invoice created successfully",
+        life: 3000,
+      });
+      handleCloseModal();
+      return getAllInvoices();
+    } catch (error: any) {
+      return toast.add({
+        severity: "error",
+        summary: "Error",
+        detail: error.message,
+        life: 3000,
+      });
+    } finally {
+      loading.value = false;
+    }
+  } else {
+    try {
+      loading.value = true;
+      const data = await updateInvoice({
+        ...values,
+        invoiceItemList: invoiceItems.value,
+      });
+      toast.add({
+        severity: "success",
+        summary: "Success",
+        detail: data.message,
+        life: 3000,
+      });
+      handleCloseModal();
+      if (route.path.startsWith("/invoice")) {
+        console.log(values.invoiceId);
+        return router.go(0);
+      } else {
+        return getAllInvoices();
+      }
+    } catch (error: any) {
+      return toast.add({
+        severity: "error",
+        summary: "Error",
+        detail: error.message,
+        life: 3000,
+      });
+    } finally {
+      loading.value = false;
+    }
+  }
 });
 
 const { value: invoiceDate } = useField(
@@ -173,6 +209,12 @@ watch(
 const setInvoiceFields = (invoice: InvoiceType) => {
   if (invoice) {
     setFieldValue("billerStreetAddress", invoice.billerStreetAddress);
+    setFieldValue("invoiceId", invoice.invoiceId);
+    setFieldValue("id", invoice.id);
+    setFieldValue("invoiceTotal", invoice.invoiceTotal);
+    setFieldValue("invoicePaid", invoice.invoicePaid);
+    setFieldValue("invoicePending", invoice.invoicePending);
+    setFieldValue("invoiceDraft", invoice.invoiceDraft);
     setFieldValue("billerCity", invoice.billerCity);
     setFieldValue("billerCountry", invoice.billerCountry);
     setFieldValue("billerZipCode", invoice.billerZipCode);
@@ -190,7 +232,11 @@ const setInvoiceFields = (invoice: InvoiceType) => {
     setFieldValue("clientZipCode", invoice.clientZipCode);
     setFieldValue("clientCity", invoice.clientCity);
     // @ts-ignore
-    setFieldValue("invoiceDate", formatFirestoreTimestamp(invoice.invoiceDate));
+    // setFieldValue("invoiceDate", formatFirestoreTimestamp(invoice.invoiceDate));
+    setFieldValue(
+      "invoiceDate",
+      new Date(formatFirestoreTimestamp(invoice.invoiceDate))
+    );
     invoiceItems.value = invoice.invoiceItemList;
   } else {
     handleFormReset();
@@ -217,7 +263,7 @@ watch(editedInvoice, (newInvoice) => {
     <Dialog
       :closable="false"
       v-model:visible="invoiceModalVisible"
-      header="New Invoice"
+      :header="editedInvoice ? 'Edit Invoice' : 'New Invoice'"
       position="left"
       :modal="true"
       :draggable="false"
@@ -348,14 +394,14 @@ watch(editedInvoice, (newInvoice) => {
         <div class="flex justify-between gap-2 my-10">
           <Button
             type="button"
-            label="Discard"
-            severity=""
+            :label="editedInvoice ? 'Cancel' : 'Discard'"
             @click="discardDialogvisible = true"
             :disabled="loading"
             class="warning-btn min-w-[150px]"
           ></Button>
           <div class="flex gap-2">
             <Button
+              v-if="!editedInvoice"
               type="button"
               label="Save draft"
               @click="handleSaveDraft"
@@ -365,9 +411,8 @@ watch(editedInvoice, (newInvoice) => {
             <Button
               type="submit"
               :loading="loading"
-              :icon="loading && 'pi-spin pi-spinner'"
-              :label="loading ? '' : 'Create invoice'"
-              class="primary-btn"
+              :label="editedInvoice ? 'Update' : 'Create invoice'"
+              class="primary-btn min-w-[150px]"
             />
           </div>
         </div>

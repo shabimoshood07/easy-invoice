@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import InputNumber from "primevue/inputnumber";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 const props = defineProps<{
   invoiceItems: InvoiceItemType[];
@@ -10,6 +10,14 @@ const onRowEditSave = (event: any) => {
   let { newData, index } = event;
   props.invoiceItems[index] = newData;
 };
+
+const invoiceTotal = computed(() => {
+  let total = 0;
+  props.invoiceItems.forEach((item) => {
+    total += item.total!;
+  });
+  return total;
+});
 const editingRows = ref([]);
 const selectedItem = ref<InvoiceItemType>();
 const deleteItemDialog = ref(false);
@@ -42,11 +50,7 @@ const deleteItem = () => {
       @row-edit-save="onRowEditSave"
       v-model:editingRows="editingRows"
     >
-      <Column
-        field="itemName"
-        header="Item name"
-        style="min-width: 200px"
-      >
+      <Column field="itemName" header="Item name" style="min-width: 200px">
         <template #editor="{ data, field }">
           <InputText v-model="data[field]" class="w-[200px] border-2" />
         </template>
@@ -125,7 +129,13 @@ const deleteItem = () => {
         </template>
       </Column>
     </DataTable>
-
+    <div
+      v-if="invoiceItems.length > 0"
+      class="flex justify-between bg-primary-3 p-4 rounded-b-lg text-secondary-1"
+    >
+      <h1 class="text-xl capitalize">Amount due</h1>
+      <h1 class="text-3xl">&#8358;{{ invoiceTotal.toLocaleString() }}</h1>
+    </div>
     <Dialog
       v-model:visible="deleteItemDialog"
       :style="{ width: '450px' }"
