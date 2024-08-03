@@ -5,9 +5,7 @@ import InvoiceDetails from "../views/InvoiceDetails.vue";
 import Login from "../views/Login.vue";
 import SignUp from "../views/SignUp.vue";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-// import { useUserStore } from "../store/store";
-// const userStore = useUserStore();
-// const { handleLogin } = userStore;
+import Setting from "../views/Setting.vue";
 
 const routes = [
   {
@@ -27,6 +25,17 @@ const routes = [
     path: "/invoice/:invoiceId",
     name: "Invoice",
     component: InvoiceDetails,
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/setting",
+    name: "Setting",
+    component: Setting,
+    meta: {
+      requiresAuth: true,
+    },
   },
   {
     path: "/login",
@@ -52,7 +61,6 @@ const getCurrentUser = () => {
       (user) => {
         removeListener();
         resolve(user);
-        // user && handleLogin(user);
       },
       reject
     );
@@ -60,6 +68,14 @@ const getCurrentUser = () => {
 };
 
 router.beforeEach(async (to, from, next) => {
+  if (to.name === "Login" || to.name === "SignUp") {
+    if (await getCurrentUser()) {
+      next({ name: "Dashboard" });
+    } else {
+      next();
+    }
+  }
+
   if (to.matched.some((record) => record.meta.requiresAuth)) {
     if (await getCurrentUser()) {
       next();

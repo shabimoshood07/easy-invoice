@@ -8,6 +8,8 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     Auth: typeof import('./src/components/Auth.vue')['default']
+    Avatar: typeof import('primevue/avatar')['default']
+    Badge: typeof import('primevue/badge')['default']
     Button: typeof import('primevue/button')['default']
     Column: typeof import('primevue/column')['default']
     CreateInvoiceModal: typeof import('./src/components/CreateInvoiceModal.vue')['default']
@@ -27,5 +29,8 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     ThemeSwitch: typeof import('./src/components/ThemeSwitch.vue')['default']
     TieredMenu: typeof import('primevue/tieredmenu')['default']
+  }
+  export interface ComponentCustomProperties {
+    Ripple: typeof import('primevue/ripple')['default']
   }
 }

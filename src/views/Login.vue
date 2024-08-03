@@ -15,8 +15,10 @@ import { RouterLink, useRouter } from "vue-router";
 import { useToast } from "primevue/usetoast";
 import Button from "primevue/button";
 import { useUserStore } from "../store/store";
+// user store
 const userStore = useUserStore();
 const { handleLogin } = userStore;
+
 
 //Refs
 const loading = ref(false);
@@ -28,7 +30,7 @@ const initialState = {
   Password: "",
 };
 
-const { handleSubmit, resetForm, setFieldValue, errors } = useForm({
+const { handleSubmit, errors } = useForm({
   validationSchema: loginValidationSchema,
   validateOnMount: false,
   keepValuesOnUnmount: true,
@@ -41,6 +43,30 @@ const { value: password } = useField("password", loginValidationSchema);
 const login = handleSubmit(async (values) => {
   loading.value = true;
   signInWithEmailAndPassword(getAuth(), values.email, values.password)
+    .then((data) => {
+      handleLogin(data.user);
+      toast.add({
+        severity: "success",
+        summary: "Success",
+        detail: "Login successful",
+        life: 3000,
+      });
+      router.replace({ name: "Dashboard" });
+    })
+    .catch((err) => {
+      toast.add({
+        severity: "error",
+        summary: "Error",
+        detail: "Invalid credentials",
+        life: 3000,
+      });
+    })
+    .finally(() => (loading.value = false));
+});
+
+const signInWithGoogle = async () => {
+  const provider = new GoogleAuthProvider();
+  signInWithPopup(getAuth(), provider)
     .then((data) => {
       console.log(data);
       handleLogin(data.user);
@@ -60,19 +86,11 @@ const login = handleSubmit(async (values) => {
         detail: "Invalid credentials",
         life: 3000,
       });
-    })
-    .finally(() => (loading.value = false));
-});
-
-const signInWithGoogle = async () => {
-  const provider = new GoogleAuthProvider();
-  signInWithPopup(getAuth(), provider)
-    .then((data) => {})
-    .catch((err) => console.log(err));
+    });
 };
 </script>
 <template>
-  <section class="h-screen flex justify-center gap-6">
+  <section class="h-screen flex justify-center gap-6 my-8">
     <div
       class="bg-primary-1/40 dark:bg-primary-4 p-6 rounded-lg h-fit w-full max-w-[600px]"
     >
@@ -124,7 +142,7 @@ const signInWithGoogle = async () => {
           :disabled="loading"
         />
       </form>
-      <p class="py-4 text-center dark:text-secondary-1 text-base">or</p>
+      <p class="py-3 text-center dark:text-secondary-1 text-lg">or</p>
       <Button
         label="Continue with Google"
         class="primary-btn w-full mb-6"

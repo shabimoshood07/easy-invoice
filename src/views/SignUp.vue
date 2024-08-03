@@ -12,7 +12,7 @@ import {
   signInWithPopup,
 } from "firebase/auth";
 import { ref } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 import Button from "primevue/button";
 import { useToast } from "primevue/usetoast";
 import { useUserStore } from "../store/store";
@@ -20,6 +20,7 @@ import { useUserStore } from "../store/store";
 //Refs
 const loading = ref(false);
 const toast = useToast();
+// user store
 const userStore = useUserStore();
 const { handleLogin } = userStore;
 const router = useRouter();
@@ -28,7 +29,7 @@ const initialState = {
   Password: "",
 };
 
-const { handleSubmit, resetForm, setFieldValue, errors } = useForm({
+const { handleSubmit, errors } = useForm({
   validationSchema: signUpValidationSchema,
   validateOnMount: false,
   keepValuesOnUnmount: true,
@@ -43,7 +44,7 @@ const { value: confirm_password } = useField(
 );
 
 const register = handleSubmit(async (values) => {
-  console.log(values);
+  loading.value = true;
   createUserWithEmailAndPassword(getAuth(), values.email, values.password)
     .then((data) => {
       handleLogin(data.user);
@@ -60,7 +61,7 @@ const register = handleSubmit(async (values) => {
       toast.add({
         severity: "error",
         summary: "Error",
-        detail: "Invalid credentials",
+        detail: err.message.split(":")[1],
         life: 3000,
       });
     })
@@ -70,16 +71,33 @@ const register = handleSubmit(async (values) => {
 const signInWithGoogle = async () => {
   const provider = new GoogleAuthProvider();
   signInWithPopup(getAuth(), provider)
-    .then((data) => {})
-    .catch((err) => console.log(err));
+    .then((data) => {
+      handleLogin(data.user);
+      toast.add({
+        severity: "success",
+        summary: "Success",
+        detail: "Login successful",
+        life: 3000,
+      });
+      router.replace({ name: "Dashboard" });
+    })
+    .catch((err) => {
+      console.log(err.message, typeof err.message);
+      toast.add({
+        severity: "error",
+        summary: "Error",
+        detail: err.message,
+        life: 3000,
+      });
+    });
 };
 </script>
 <template>
-  <section class="h-screen flex justify-center gap-6">
+  <section class="h-screen flex justify-center gap-6 my-8">
     <div
       class="bg-primary-1/40 dark:bg-primary-4 p-6 rounded-lg h-fit w-full max-w-[600px] mx-auto"
     >
-      <h1 class="text-4xl text-primary-5 dark:text-secondary-1 my-9">
+      <h1 class="text-primary-5 text-4xl dark:text-secondary-1 my-9">
         Sign up
       </h1>
       <form action="" @submit.prevent="register">
@@ -153,15 +171,17 @@ const signInWithGoogle = async () => {
           :loading="loading"
           label="Sign up"
           class="primary-btn w-full my-6"
+          :disabled="loading"
         />
       </form>
-      <p class="py-4 text-center dark:text-secondary-1 text-base">or</p>
+      <p class="py-3 text-center dark:text-secondary-1 text-lg">or</p>
       <Button
         label="Continue with Google"
         class="primary-btn w-full mb-6"
         icon="pi pi-google"
         iconPos="right"
         :disabled="loading"
+        @click="signInWithGoogle"
       />
       <p class="text-right dark:text-secondary-1 text-primary-5 text-lg">
         Already have an account?

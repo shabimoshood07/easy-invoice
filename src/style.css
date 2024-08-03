@@ -25,5 +25,25 @@ div[data-pc-name="pcpaginator"] div[data-pc-section="content"] {
 }
 
 .p-password-input {
-    @apply !w-full px-2 
+    @apply !w-full px-2
+}
+
+.p-splitbutton-dropdown {
+    @apply text-secondary-1 dark:text-primary-5
+}
+
+.p-tieredmenu-root-list {
+    @apply space-y-4
+}
+
+.p-tieredmenu-item-link {
+    @apply p-4
+}
+
+.p-tieredmenu-item-icon {
+    @apply text-2xl
+}
+
+.p-tieredmenu-item-label {
+    @apply text-base
 }

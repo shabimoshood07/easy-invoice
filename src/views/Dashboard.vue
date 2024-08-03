@@ -8,7 +8,6 @@ import {
   useUserStore,
 } from "../store/store";
 import { storeToRefs } from "pinia";
-import { getAuth } from "firebase/auth";
 
 // Invoice store
 const invoiceStore = useInvoiceStore();
@@ -18,12 +17,12 @@ const { getAllInvoices } = invoiceStore;
 // Invoice modal store
 const invoiceModalStore = useCreateInvoiceModalStore();
 const { editedInvoice, invoiceModalVisible } = storeToRefs(invoiceModalStore);
-// User store
-
+// user store
 const userStore = useUserStore();
+const { user } = storeToRefs(userStore);
 
 onMounted(() => {
-  getAllInvoices();
+  getAllInvoices(user.value!.uid);
 });
 
 const handleClick = () => {
@@ -39,8 +38,6 @@ const statuses = ref([
   { status: "Paid", value: "paid" },
   { status: "Clear filter", value: "clear" },
 ]);
-const user = getAuth().currentUser;
-console.log(user?.email);
 </script>
 <template>
   <div>

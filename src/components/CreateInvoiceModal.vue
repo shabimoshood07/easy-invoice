@@ -9,7 +9,11 @@ import InvoiceItemsList from "./InvoiceItemsList.vue";
 import { uid } from "uid";
 import { useToast } from "primevue/usetoast";
 import { useField, useForm } from "vee-validate";
-import { useCreateInvoiceModalStore, useInvoiceStore } from "../store/store";
+import {
+  useCreateInvoiceModalStore,
+  useInvoiceStore,
+  useUserStore,
+} from "../store/store";
 import { storeToRefs } from "pinia";
 import { createInvoiceValidationSchema } from "../schemas";
 import { formatFirestoreTimestamp } from "../utils";
@@ -18,13 +22,21 @@ import { useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
+
 // invoice modal store
 const invoiceModalStore = useCreateInvoiceModalStore();
-const invoiceStore = useInvoiceStore();
 const { invoiceModalVisible, editedInvoice } = storeToRefs(invoiceModalStore);
 const { toggleInvoiceModalVisible } = invoiceModalStore;
+
+// invoice store
+const invoiceStore = useInvoiceStore();
 const { getAllInvoices, createNewInvoice, updateInvoice } = invoiceStore;
 const { invoiceItems } = storeToRefs(invoiceStore);
+
+// user store
+const userStore = useUserStore();
+const { user } = storeToRefs(userStore);
+
 const toast = useToast();
 const discardDialogvisible = ref(false);
 const loading = ref(false);
@@ -119,7 +131,7 @@ const handlePublishInvoice = handleSubmit(async (values) => {
   if (!editedInvoice.value) {
     try {
       loading.value = true;
-      await createNewInvoice(values);
+      await createNewInvoice({ user: user.value?.uid, ...values });
       toast.add({
         severity: "success",
         summary: "Success",
@@ -127,7 +139,7 @@ const handlePublishInvoice = handleSubmit(async (values) => {
         life: 3000,
       });
       handleCloseModal();
-      return getAllInvoices();
+      return getAllInvoices(user.value!.uid);
     } catch (error: any) {
       return toast.add({
         severity: "error",
@@ -142,6 +154,7 @@ const handlePublishInvoice = handleSubmit(async (values) => {
     try {
       loading.value = true;
       const data = await updateInvoice({
+        user: user.value?.uid,
         ...values,
         invoiceItemList: invoiceItems.value,
       });
@@ -156,7 +169,7 @@ const handlePublishInvoice = handleSubmit(async (values) => {
         console.log(values.invoiceId);
         return router.go(0);
       } else {
-        return getAllInvoices();
+        return getAllInvoices(user.value!.uid);
       }
     } catch (error: any) {
       return toast.add({

@@ -13,13 +13,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase/firebaseInit";
 import { uid } from "uid";
-import {
-  getAuth,
-  onAuthStateChanged,
-  signOut,
-  User,
-  UserCredential,
-} from "firebase/auth";
+import { getAuth, signOut, User } from "firebase/auth";
 import { useRouter } from "vue-router";
 
 const removeUndefinedId = (obj: any) => {
@@ -34,11 +28,12 @@ export const useInvoiceStore = defineStore("invoice", () => {
   const isLoadingInvoice = ref<boolean>(false);
   const invoiceItems = ref<InvoiceItemType[]>([]);
 
-  const getAllInvoices = async () => {
+  const getAllInvoices = async (userId: string) => {
     try {
       isLoadingInvoices.value = true;
       const dbBase = collection(db, "invoice");
-      const querySnapshot = await getDocs(dbBase);
+      const q = query(dbBase, where("user", "==", userId));
+      const querySnapshot = await getDocs(q);
       const invoicesData = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -50,13 +45,21 @@ export const useInvoiceStore = defineStore("invoice", () => {
       isLoadingInvoices.value = false;
     }
   };
-  const getInvoice = async (
-    invoiceId: string
-  ): Promise<{ invoices: InvoiceType[] }> => {
+  const getInvoice = async ({
+    invoiceId,
+    userId,
+  }: {
+    invoiceId: string;
+    userId: string;
+  }): Promise<{ invoices: InvoiceType[] }> => {
     try {
       isLoadingInvoice.value = true;
       const dbBase = collection(db, "invoice");
-      const q = query(dbBase, where("invoiceId", "==", invoiceId));
+      const q = query(
+        dbBase,
+        where("invoiceId", "==", invoiceId),
+        where("user", "==", userId)
+      );
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
