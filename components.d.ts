@@ -13,6 +13,7 @@ declare module 'vue' {
     CreateInvoiceModal: typeof import('./src/components/CreateInvoiceModal.vue')['default']
     DataTable: typeof import('primevue/datatable')['default']
     Dialog: typeof import('primevue/dialog')['default']
+    Divider: typeof import('primevue/divider')['default']
     FormInput: typeof import('./src/components/common/FormInput.vue')['default']
     IconField: typeof import('primevue/iconfield')['default']
     InputIcon: typeof import('primevue/inputicon')['default']
@@ -25,5 +26,6 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     ThemeSwitch: typeof import('./src/components/ThemeSwitch.vue')['default']
+    TieredMenu: typeof import('primevue/tieredmenu')['default']
   }
 }

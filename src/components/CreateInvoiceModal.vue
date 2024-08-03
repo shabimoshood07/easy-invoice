@@ -23,8 +23,7 @@ const invoiceModalStore = useCreateInvoiceModalStore();
 const invoiceStore = useInvoiceStore();
 const { invoiceModalVisible, editedInvoice } = storeToRefs(invoiceModalStore);
 const { toggleInvoiceModalVisible } = invoiceModalStore;
-const { getAllInvoices, createNewInvoice, updateInvoice, getInvoice } =
-  invoiceStore;
+const { getAllInvoices, createNewInvoice, updateInvoice } = invoiceStore;
 const { invoiceItems } = storeToRefs(invoiceStore);
 const toast = useToast();
 const discardDialogvisible = ref(false);
@@ -232,7 +231,6 @@ const setInvoiceFields = (invoice: InvoiceType) => {
     setFieldValue("clientZipCode", invoice.clientZipCode);
     setFieldValue("clientCity", invoice.clientCity);
     // @ts-ignore
-    // setFieldValue("invoiceDate", formatFirestoreTimestamp(invoice.invoiceDate));
     setFieldValue(
       "invoiceDate",
       new Date(formatFirestoreTimestamp(invoice.invoiceDate))
@@ -391,7 +389,7 @@ watch(editedInvoice, (newInvoice) => {
           class="primary-btn w-full"
         />
 
-        <div class="flex justify-between gap-2 my-10">
+        <div class="flex justify-between gap-3 my-10 flex-wrap">
           <Button
             type="button"
             :label="editedInvoice ? 'Cancel' : 'Discard'"

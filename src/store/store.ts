@@ -13,6 +13,14 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase/firebaseInit";
 import { uid } from "uid";
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut,
+  User,
+  UserCredential,
+} from "firebase/auth";
+import { useRouter } from "vue-router";
 
 const removeUndefinedId = (obj: any) => {
   if (obj.id === undefined) {
@@ -181,5 +189,32 @@ export const useCreateInvoiceModalStore = defineStore("invoice-modal", () => {
     invoiceModalVisible,
     toggleInvoiceModalVisible,
     editedInvoice,
+  };
+});
+
+export const useUserStore = defineStore("user", () => {
+  const router = useRouter();
+  const isLoggedIn = ref<boolean>(false);
+  const user = ref<User | null>(null);
+
+  const handleLogin = (cred: User) => {
+    isLoggedIn.value = true;
+    user.value = cred;
+  };
+  const handleSignOut = () => {
+    let auth;
+    auth = getAuth();
+    signOut(auth).then(() => {
+      console.log("signed out");
+      isLoggedIn.value = false;
+      user.value = null;
+      router.replace({ name: "Home" });
+    });
+  };
+  return {
+    isLoggedIn,
+    user,
+    handleLogin,
+    handleSignOut,
   };
 });

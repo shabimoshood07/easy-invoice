@@ -54,3 +54,32 @@ export const createInvoiceValidationSchema = toTypedSchema(
     invoiceTotal: zod.number().nullable(),
   })
 );
+
+export const loginValidationSchema = toTypedSchema(
+  zod.object({
+    email: zod
+      .string({ required_error: "email is required" })
+      .min(1, { message: "email is required" })
+      .email("invalid email"),
+    password: zod.string({ required_error: "password is required" }),
+  })
+);
+export const signUpValidationSchema = toTypedSchema(
+  zod
+    .object({
+      email: zod
+        .string({ required_error: "email is required" })
+        .email("invalid email")
+        .min(1, { message: "email is required" }),
+      password: zod
+        .string({ required_error: "password is required" })
+        .min(8, { message: "Min. of 8 characters" }),
+      confirm_password: zod
+        .string({ required_error: "confirm password" })
+        .min(8, { message: "Min. of 8 characters" }),
+    })
+    .refine((data) => data.password === data.confirm_password, {
+      message: "Passwords don't match",
+      path: ["confirm_password"],
+    })
+);

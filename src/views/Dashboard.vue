@@ -2,8 +2,13 @@
 import Select from "primevue/select";
 import { onMounted, ref } from "vue";
 import InvoiceList from "../components/InvoiceList.vue";
-import { useCreateInvoiceModalStore, useInvoiceStore } from "../store/store";
+import {
+  useCreateInvoiceModalStore,
+  useInvoiceStore,
+  useUserStore,
+} from "../store/store";
 import { storeToRefs } from "pinia";
+import { getAuth } from "firebase/auth";
 
 // Invoice store
 const invoiceStore = useInvoiceStore();
@@ -13,6 +18,9 @@ const { getAllInvoices } = invoiceStore;
 // Invoice modal store
 const invoiceModalStore = useCreateInvoiceModalStore();
 const { editedInvoice, invoiceModalVisible } = storeToRefs(invoiceModalStore);
+// User store
+
+const userStore = useUserStore();
 
 onMounted(() => {
   getAllInvoices();
@@ -31,6 +39,8 @@ const statuses = ref([
   { status: "Paid", value: "paid" },
   { status: "Clear filter", value: "clear" },
 ]);
+const user = getAuth().currentUser;
+console.log(user?.email);
 </script>
 <template>
   <div>

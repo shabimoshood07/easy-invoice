@@ -21,5 +21,9 @@ body {
 }
 
 div[data-pc-name="pcpaginator"] div[data-pc-section="content"] {
-    @apply  flex items-center justify-center p-4 gap-4 text-base bg-primary-1 dark:bg-primary-4 dark:text-secondary-1 text-primary-5 ;
+    @apply flex items-center justify-center p-4 gap-4 text-base bg-primary-1 dark:bg-primary-4 dark:text-secondary-1 text-primary-5;
+}
+
+.p-password-input {
+    @apply !w-full px-2 
 }
