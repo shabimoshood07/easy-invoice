@@ -54,12 +54,12 @@ List the ready features here:
 ### environmental variables
 ```env
 #Firestore configuration
-apiKey=
-authDomain=
-projectId=
-storageBucket=
-messagingSenderId=
-appId=
+VITE_API_KEY=
+VITE_AUTH_DOMAIN=
+VITE_PROJECT_ID=
+VITE_STORAGE_BUCKET=
+VITE_MESSAGING_SENDER_ID=
+VITE_APP_ID=
 
 ```
 
