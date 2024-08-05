@@ -1,5 +1,96 @@
-# Vue 3 + TypeScript + Vite
+# Project Name
+> EasyInvoice
+> Live demo [_here_](https://collaborator-bay.vercel.app).
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+## Table of Contents
+* [General Info](#general-information)
+* [Technologies Used](#technologies-used)
+* [Features](#features)
+* [Screenshots](#screenshots)
+* [Setup](#setup)
+* [Project Status](#project-status)
+* [Room for Improvement](#room-for-improvement)
+* [Contact](#contact)
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+
+## General Information
+**EasyInvoice** Is an invoice app, built with Vue.js, which offers a comprehensive solution for managing invoices with ease and efficiency. Users can sign up using their email and password or opt for Google authentication for a seamless experience
+
+
+## Technologies Used
+Project is created with:
+* vue: 3.4
+* Firebase 
+* typescript: 5
+* primeVue
+* tailwindcss
+
+
+## Features
+List the ready features here:
+ **Authentication**: User authentication using email and password or google authentication through Firebase authentication, ensuring secure sign-in/out and session management.
+
+👉 **Invoice Generation**: Quickly create professional invoices for your customers..
+
+👉 **Invoice Management**
+   - **Invoice Editing**: Modify existing invoices to reflect any changes.
+   - **Due Dates**: Users can select when invoices are due for payment.
+   - **Payment Status**: Mark invoices as paid or pending to keep track of payment statuses.
+   - **PDF Export**: Export invoices as PDF files for easy sharing and record-keeping..
+
+👉 **Filter Invoices**: Filter the invoice list based on payment status for better organization and management.
+
+👉 **Responsive**: The application is not designed for mobile usage.
+  
+
+
+## Screenshots
+![Example screenshot](./img/screenshot.png)
+<!-- If you have screenshots you'd like to share, include them here. -->
+
+
+## Setup
+
+### environmental variables
+```env
+#Firestore configuration
+apiKey=
+authDomain=
+projectId=
+storageBucket=
+messagingSenderId=
+appId=
+
+```
+
+  
+## Available Scripts
+
+### `npm install`
+then
+### `npm run dev`
+
+Runs the app in the development mode.\
+Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+
+The page will reload when you make changes.\
+You may also see any lint errors in the console.
+
+## Project Status
+Project is: Completed
+
+## Room for Improvement
+Room for improvement:
+- Dynamically set invoice headers and footers 
+
+
+
+
+## Contact
+Created by [shabimoshood07@gmail.com] - feel free to contact me!
+
+
+
+
+
+
