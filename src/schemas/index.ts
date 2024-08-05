@@ -38,7 +38,7 @@ export const createInvoiceValidationSchema = toTypedSchema(
       .string({ required_error: "product description is required" })
       .min(1, { message: "product description is required" }),
     invoicePending: zod.boolean().nullable(),
-    invoiceDraft: zod.boolean().nullable(),
+    // invoiceDraft: zod.boolean().nullable(),
     invoicePaid: zod.boolean().nullable(),
     invoiceDate: zod.date(),
     paymentDueDate: zod.date().nullable(),

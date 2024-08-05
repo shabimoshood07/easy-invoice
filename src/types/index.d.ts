@@ -44,9 +44,9 @@ interface InvoiceType {
   paymentTerms: { days: string; value: number };
   paymentDueDate: { nanoseconds: number; seconds: number };
   productDescription: string;
-  invoicePending: null | boolean;
-  invoiceDraft: null | boolean;
-  invoicePaid: null | boolean;
+  invoicePending: boolean;
+  invoiceDraft: boolean;
+  invoicePaid: boolean;
   invoiceTotal: number;
   invoiceItemList: InvoiceItemType[];
 }

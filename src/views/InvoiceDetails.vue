@@ -14,6 +14,7 @@ import Button from "primevue/button";
 import Dialog from "primevue/dialog";
 // @ts-ignore
 import html2pdf from "html2pdf.js";
+import ExportInvoiceButton from "../components/ExportInvoiceButton.vue";
 // user store
 const userStore = useUserStore();
 const { user } = storeToRefs(userStore);
@@ -125,20 +126,6 @@ const invoiceTotal = computed(() => {
   });
   return total;
 });
-
-const exportToPdf = () => {
-  var element = document.getElementById("pdf-element");
-  var opt = {
-    margin: 1,
-    filename: `${invoice.value?.productDescription}`,
-    // image: { type: "jpeg", quality: 0.98 },
-    // html2canvas: { scale: 2 },
-    jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
-    // jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
-  };
-  // New Promise-based usage:
-  html2pdf().set(opt).from(element).save();
-};
 </script>
 <template>
   <div class="my-8">
@@ -157,17 +144,10 @@ const exportToPdf = () => {
       <Loading />
     </div>
     <!-- Details-->
+
     <div v-if="!isLoadingInvoice && invoice" class="space-y-4 my-10">
       <div class="space-y-4">
-        <div class="flex justify-end">
-          <Button
-            icon="pi pi-external-link"
-            label="Export as pdf"
-            @click="exportToPdf"
-            class="primary-btn"
-          />
-        </div>
-
+        <ExportInvoiceButton />
         <div
           class="bg-primary-1/40 dark:bg-primary-4 rounded-md w-full p-2 py-4 flex justify-between items-center flex-wrap gap-3"
         >
@@ -396,6 +376,7 @@ const exportToPdf = () => {
     </div>
   </div>
 
+  <!-- Delete Modal -->
   <Dialog
     v-model:visible="showDeleteInvoiceModal"
     modal
@@ -443,6 +424,12 @@ const exportToPdf = () => {
   </Dialog>
 </template>
 
+<!-- <img
+  v-tooltip.top="item.label"
+  :alt="item.label"
+  :src="item.icon"
+  style="width: 100%"
+/> -->
 <style scoped>
 .heading {
   @apply text-base capitalize font-medium;

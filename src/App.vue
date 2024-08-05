@@ -4,7 +4,6 @@ import CreateInvoiceModal from "./components/CreateInvoiceModal.vue";
 import Navigation from "./components/Navigation.vue";
 import Toast from "primevue/toast";
 
-
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useUserStore } from "./store/store";
 import { useRouter } from "vue-router";

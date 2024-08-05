@@ -12,7 +12,7 @@ import { storeToRefs } from "pinia";
 // Invoice store
 const invoiceStore = useInvoiceStore();
 const { invoices, isLoadingInvoices, invoiceItems } = storeToRefs(invoiceStore);
-const { getAllInvoices } = invoiceStore;
+const { getAllInvoices, filterInvoice } = invoiceStore;
 
 // Invoice modal store
 const invoiceModalStore = useCreateInvoiceModalStore();
@@ -33,10 +33,9 @@ const handleClick = () => {
 
 const selectedStatus = ref();
 const statuses = ref([
-  { status: "Draft", value: "draft" },
-  { status: "Pending", value: "pending" },
-  { status: "Paid", value: "paid" },
-  { status: "Clear filter", value: "clear" },
+  { status: "Pending", value: "invoicePending" },
+  { status: "Paid", value: "invoicePaid" },
+  { status: "Clear filter", value: "reset" },
 ]);
 </script>
 <template>
@@ -60,6 +59,14 @@ const statuses = ref([
           placeholder="Filter by status"
           class="w-full md:w-56"
           checkmark
+          v-on:change="
+            (e) => {
+              if (e.value.value === 'reset') {
+                return getAllInvoices(user!.uid);
+              }
+              filterInvoice({ status: e.value.value, user: user!.uid });
+            }
+          "
           :highlightOnSelect="true"
           :pt="{
             root: {

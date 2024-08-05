@@ -22,13 +22,6 @@ const items = [
     },
   },
   {
-    label: "Setting",
-    icon: "pi pi-cog",
-    command: () => {
-      router.push({ name: "Setting" });
-    },
-  },
-  {
     label: "Logout",
     icon: "pi pi-sign-out",
     command: () => {
@@ -39,12 +32,14 @@ const items = [
 </script>
 
 <template>
-  <header class="relative w-full">
+  <header
+    class="w-full border-b-[1px] border-primary-5 dark:border-secondary-1 sticky top-0 backdrop-blur-3xl z-40"
+  >
     <div
       class="flex justify-between items-center p-4 2xl:px-0 max-w-[1550px] mx-auto"
     >
       <RouterLink to="/">
-        <LogoComponent />
+        <LogoComponent className="!h-9 !w-9" />
       </RouterLink>
 
       <div class="flex gap-4">
@@ -68,7 +63,9 @@ const items = [
                 size="normal"
                 shape="circle"
               />
-              <p class="text-secondary-1 dark:text-primary-5 hidden lg:block text-sm font-light">
+              <p
+                class="text-secondary-1 dark:text-primary-5 hidden lg:block text-sm font-light"
+              >
                 {{ user?.email }}
               </p>
             </span>

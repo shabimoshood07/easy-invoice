@@ -57,7 +57,6 @@ const initialState = {
   paymentTerms: {},
   productDescription: "",
   invoicePending: null,
-  invoiceDraft: null,
   invoicePaid: null,
   invoiceTotal: 0,
 };
@@ -74,9 +73,6 @@ const paymentTermsData = ref([
   { days: "Net 60 days", value: 60 },
 ]);
 
-const handleSaveDraft = async () => {
-  setFieldValue("invoiceDraft", true);
-};
 const handleFormReset = () => {
   resetForm();
 };
@@ -226,7 +222,7 @@ const setInvoiceFields = (invoice: InvoiceType) => {
     setFieldValue("invoiceTotal", invoice.invoiceTotal);
     setFieldValue("invoicePaid", invoice.invoicePaid);
     setFieldValue("invoicePending", invoice.invoicePending);
-    setFieldValue("invoiceDraft", invoice.invoiceDraft);
+    // setFieldValue("invoiceDraft", invoice.invoiceDraft);
     setFieldValue("billerCity", invoice.billerCity);
     setFieldValue("billerCountry", invoice.billerCountry);
     setFieldValue("billerZipCode", invoice.billerZipCode);
@@ -411,14 +407,6 @@ watch(editedInvoice, (newInvoice) => {
             class="warning-btn min-w-[150px]"
           ></Button>
           <div class="flex gap-2">
-            <Button
-              v-if="!editedInvoice"
-              type="button"
-              label="Save draft"
-              @click="handleSaveDraft"
-              :disabled="loading"
-              class="primary-btn"
-            />
             <Button
               type="submit"
               :loading="loading"

@@ -5,7 +5,6 @@ import InvoiceDetails from "../views/InvoiceDetails.vue";
 import Login from "../views/Login.vue";
 import SignUp from "../views/SignUp.vue";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import Setting from "../views/Setting.vue";
 
 const routes = [
   {
@@ -25,14 +24,6 @@ const routes = [
     path: "/invoice/:invoiceId",
     name: "Invoice",
     component: InvoiceDetails,
-    meta: {
-      requiresAuth: true,
-    },
-  },
-  {
-    path: "/setting",
-    name: "Setting",
-    component: Setting,
     meta: {
       requiresAuth: true,
     },

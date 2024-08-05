@@ -24,6 +24,7 @@ const removeUndefinedId = (obj: any) => {
 };
 export const useInvoiceStore = defineStore("invoice", () => {
   const invoices = ref<InvoiceType[]>([]);
+  const currentInvoice = ref<InvoiceType | null>(null);
   const isLoadingInvoices = ref<boolean>(false);
   const isLoadingInvoice = ref<boolean>(false);
   const invoiceItems = ref<InvoiceItemType[]>([]);
@@ -71,6 +72,7 @@ export const useInvoiceStore = defineStore("invoice", () => {
         ...doc.data(),
       })) as InvoiceType[];
 
+      currentInvoice.value = invoices[0];
       return { invoices };
     } catch (error: any) {
       throw new Error(error.message);
@@ -168,6 +170,34 @@ export const useInvoiceStore = defineStore("invoice", () => {
     }
   };
 
+  const filterInvoice = async ({
+    status,
+    user,
+  }: {
+    status: string;
+    user: string;
+  }) => {
+    try {
+      isLoadingInvoices.value = true;
+      const dbBase = collection(db, "invoice");
+      const q = query(
+        dbBase,
+        where(status, "==", true),
+        where("user", "==", user)
+      );
+      const querySnapshot = await getDocs(q);
+      const invoicesData = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as InvoiceType[];
+      invoices.value = invoicesData;
+    } catch (error) {
+      console.log(error);
+    } finally {
+      isLoadingInvoices.value = false;
+    }
+  };
+
   return {
     invoices,
     isLoadingInvoices,
@@ -180,6 +210,8 @@ export const useInvoiceStore = defineStore("invoice", () => {
     markInvoiceAsPaid,
     markInvoiceAsPending,
     deleteInvoice,
+    filterInvoice,
+    currentInvoice,
   };
 });
 
@@ -208,7 +240,6 @@ export const useUserStore = defineStore("user", () => {
     let auth;
     auth = getAuth();
     signOut(auth).then(() => {
-      console.log("signed out");
       isLoggedIn.value = false;
       user.value = null;
       router.replace({ name: "Home" });
