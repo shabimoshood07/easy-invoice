@@ -53,7 +53,7 @@ const login = handleSubmit(async (values) => {
       });
       router.replace({ name: "Dashboard" });
     })
-    .catch((err) => {
+    .catch(() => {
       toast.add({
         severity: "error",
         summary: "Error",

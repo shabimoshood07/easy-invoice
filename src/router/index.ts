@@ -58,7 +58,7 @@ const getCurrentUser = () => {
   });
 };
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _, next) => {
   if (to.name === "Login" || to.name === "SignUp") {
     if (await getCurrentUser()) {
       next({ name: "Dashboard" });

@@ -1,26 +1,17 @@
 <script setup lang="ts">
 import { useDark, useToggle } from "@vueuse/core";
-import { VsxIcon } from "vue-iconsax";
 const isDark = useDark();
 const toggleDark = useToggle(isDark);
 </script>
 <template>
   <div>
     <button @click="toggleDark()">
-      <VsxIcon
-        iconName="Sun1"
-        :size="32"
-        class="text-secondary-1"
-        type="bold"
+      <i
         v-if="isDark"
-      />
-      <VsxIcon
-        v-else
-        iconName="Moon"
-        :size="32"
-        class="text-primary-5"
-        type="bold"
-      />
+        class="pi pi-sun text-secondary-1"
+        style="font-size: 2rem"
+      ></i>
+      <i v-else class="pi pi-moon text-primary-5" style="font-size: 2rem"></i>
     </button>
   </div>
 </template>
