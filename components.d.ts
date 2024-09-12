@@ -12,6 +12,7 @@ declare module 'vue' {
     CreateInvoiceModal: typeof import('./src/components/CreateInvoiceModal.vue')['default']
     DataTable: typeof import('primevue/datatable')['default']
     Dialog: typeof import('primevue/dialog')['default']
+    ExportInvoice: typeof import('./src/components/ExportInvoice.vue')['default']
     ExportInvoiceButton: typeof import('./src/components/ExportInvoiceButton.vue')['default']
     FormInput: typeof import('./src/components/common/FormInput.vue')['default']
     InputText: typeof import('primevue/inputtext')['default']

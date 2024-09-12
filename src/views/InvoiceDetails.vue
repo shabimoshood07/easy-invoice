@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { nextTick } from "vue";
+
 import { useRoute, useRouter } from "vue-router";
 import {
   useCreateInvoiceModalStore,
@@ -14,7 +16,6 @@ import Button from "primevue/button";
 import Dialog from "primevue/dialog";
 // @ts-ignore
 import html2pdf from "html2pdf.js";
-import ExportInvoiceButton from "../components/ExportInvoiceButton.vue";
 // user store
 const userStore = useUserStore();
 const { user } = storeToRefs(userStore);
@@ -34,6 +35,7 @@ const invoice = ref<InvoiceType | null>(null);
 const errorMsg = ref<string | null>(null);
 const isUpdating = ref<boolean>(false);
 const showDeleteInvoiceModal = ref<boolean>(false);
+const showExportInvoiceModal = ref<boolean>(false);
 
 const getInvoiceDetails = async () => {
   try {
@@ -126,6 +128,22 @@ const invoiceTotal = computed(() => {
   });
   return total;
 });
+const exportToPdf = async () => {
+  showExportInvoiceModal.value = true;
+  await nextTick();
+  setTimeout(() => {
+    var element = document.getElementById("pdf-element");
+    var opt = {
+      margin: 1,
+      filename: `${invoice.value!.productDescription}`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "mm", format: "letter", orientation: "portrait" },
+    };
+    html2pdf().set(opt).from(element).save();
+    showExportInvoiceModal.value = false;
+  }, 500);
+};
 </script>
 <template>
   <div class="my-8">
@@ -144,10 +162,16 @@ const invoiceTotal = computed(() => {
       <Loading />
     </div>
     <!-- Details-->
-
     <div v-if="!isLoadingInvoice && invoice" class="space-y-4 my-10">
       <div class="space-y-4">
-        <ExportInvoiceButton />
+        <div class="flex justify-end">
+          <Button
+            icon="pi pi-external-link"
+            label="Export as pdf"
+            @click="exportToPdf"
+            class="primary-btn"
+          />
+        </div>
         <div
           class="bg-primary-1/40 dark:bg-primary-4 rounded-md w-full p-2 py-4 flex justify-between items-center flex-wrap gap-3"
         >
@@ -209,8 +233,8 @@ const invoiceTotal = computed(() => {
           </div>
         </div>
 
+        <!-- id="pdf-element" -->
         <div
-          id="pdf-element"
           class="bg-primary-1/40 dark:bg-primary-4 rounded-md w-full p-4 lg:p-6 dark:text-secondary-1 text-primary-5 space-y-10"
         >
           <div class="flex justify-between flex-wrap w-full">
@@ -422,14 +446,174 @@ const invoiceTotal = computed(() => {
       ></Button>
     </div>
   </Dialog>
+
+  <!-- PDF Modal -->
+  <Dialog
+    v-model:visible="showExportInvoiceModal"
+    modal
+    :style="{ width: '800px', height: '100vh', maxHeight: 'none' }"
+    :closable="false"
+    :pt="{
+      root: {
+        class: 'bg-secondary-1 min-h-[!100dvh]',
+      },
+    }"
+  >
+    <template #container="{}">
+      <div
+        id="pdf-element"
+        class="rounded-md w-full bg-secondary-1 text-primary-5 space-y-10 p-4 flex flex-col justify-between !min-h-screen"
+      >
+        <div>
+          <div class="flex justify-between flex-wrap w-full">
+            <div>
+              <h1 class="text-4xl uppercase font-semibold">
+                #{{ invoice!.invoiceId }}
+              </h1>
+              <p class="uppercase">{{ invoice!.productDescription }}</p>
+            </div>
+            <div class="capitalize text-right">
+              <p>{{ invoice!.billerStreetAddress }}</p>
+              <p>{{ invoice!.billerCity }}</p>
+              <p>{{ invoice!.billerZipCode }}</p>
+              <p>{{ invoice!.billerCountry }}</p>
+            </div>
+          </div>
+
+          <div class="flex justify-start gap-28 pb-6">
+            <div class="space-y-10">
+              <div>
+                <p class="heading">Invoice date</p>
+                <p class="detail">
+                  {{ formatFirestoreTimestamp(invoice!.invoiceDate) }}
+                </p>
+              </div>
+              <div>
+                <p class="heading">payment date</p>
+                <p class="detail">
+                  {{ formatFirestoreTimestamp(invoice!.paymentDueDate) }}
+                </p>
+              </div>
+            </div>
+
+            <div class="space-y-10">
+              <div>
+                <p class="heading">bill to</p>
+                <p class="detail">{{ invoice!.clientName }}</p>
+              </div>
+              <div class="capitalize text-left">
+                <p>{{ invoice!.clientStreetAddress }}</p>
+                <p>{{ invoice!.clientCity }}</p>
+                <p>{{ invoice!.clientZipCode }}</p>
+                <p>{{ invoice!.clientCountry }}</p>
+              </div>
+            </div>
+
+            <div>
+              <p class="heading">sent to</p>
+              <p class="detail !lowercase">{{ invoice!.clientEmail }}</p>
+            </div>
+          </div>
+
+          <div>
+            <DataTable
+              unstyled
+              :value="invoice!.invoiceItemList"
+              tableStyle="min-width: 40rem"
+              dataKey="invoiceDetails"
+              :pt="{
+                table: {
+                  class: 'bg-secondary-2 w-full',
+                },
+                thead: {
+                  class: 'border-b-2 border-primary-3',
+                },
+              }"
+            >
+              <Column
+                field="itemName"
+                header="Item name"
+                style="min-width: 10rem"
+                :pt="{
+                  headerCell: {
+                    class: 'text-left p-4  duration-500',
+                  },
+                  bodyCell: {
+                    class: '!text-lg  p-4 text-left',
+                  },
+                  columnHeaderContent: {
+                    class: 'flex gap-2 items-center',
+                  },
+                }"
+              ></Column>
+              <Column
+                field="quantity"
+                header="Qty"
+                :pt="{
+                  headerCell: {
+                    class: 'text-left p-4  duration-500',
+                  },
+                  bodyCell: {
+                    class: '!text-lg  p-4 text-left',
+                  },
+                  columnHeaderContent: {
+                    class: 'flex gap-2 items-center',
+                  },
+                }"
+              ></Column>
+              <Column
+                field="price"
+                header="Price (&#8358;)"
+                :pt="{
+                  headerCell: {
+                    class: 'text-left p-4  duration-500',
+                  },
+                  bodyCell: {
+                    class: '!text-lg  p-4 text-left',
+                  },
+                  columnHeaderContent: {
+                    class: 'flex gap-2 items-center',
+                  },
+                }"
+              >
+                <template #body="slotProps">
+                  {{ Number(slotProps.data.price).toLocaleString() }}
+                </template>
+              </Column>
+              <Column
+                field="total"
+                header="Total (&#8358;)"
+                :pt="{
+                  headerCell: {
+                    class: 'text-left p-4  duration-500',
+                  },
+                  bodyCell: {
+                    class: '!text-lg  p-4 text-left',
+                  },
+                  columnHeaderContent: {
+                    class: 'flex gap-2 items-center',
+                  },
+                }"
+              >
+                <template #body="slotProps">
+                  {{ slotProps.data.total.toLocaleString() }}
+                </template>
+              </Column>
+            </DataTable>
+          </div>
+        </div>
+
+        <div
+          class="flex justify-between bg-primary-3 p-6 rounded-b-lg text-secondary-1"
+        >
+          <h1 class="text-xl capitalize">Amount due</h1>
+          <h1 class="text-3xl">&#8358;{{ invoiceTotal.toLocaleString() }}</h1>
+        </div>
+      </div>
+    </template>
+  </Dialog>
 </template>
 
-<!-- <img
-  v-tooltip.top="item.label"
-  :alt="item.label"
-  :src="item.icon"
-  style="width: 100%"
-/> -->
 <style scoped>
 .heading {
   @apply text-base capitalize font-medium;
