@@ -1,6 +1,6 @@
 # Project Name
 > EasyInvoice
-> Live demo [_here_](https://collaborator-bay.vercel.app).
+> Live demo [_here_](https://easyyinvoice.netlify.app).
 
 ## Table of Contents
 * [General Info](#general-information)
